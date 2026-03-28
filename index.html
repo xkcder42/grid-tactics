@@ -263,7 +263,7 @@ body {
 .top-bar .score-display span { color: #ffd700; font-weight: 600; }
 .top-bar .turn-info { font-size: 14px; color: #7d8590; }
 
-.main-area { flex: 1; display: flex; overflow: hidden; }
+.main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
 /* CANVAS CONTAINER */
 .grid-container {
@@ -277,72 +277,133 @@ body {
   display: block;
 }
 
-/* SIDE PANEL */
-.side-panel {
-  width: 240px;
-  background: #161b22;
-  border-left: 1px solid #30363d;
-  padding: 16px;
+/* BOTTOM CONTROL PANEL */
+.bottom-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(13,17,23,0.97), rgba(22,27,34,0.95));
+  backdrop-filter: blur(8px);
+  border-top: 1px solid #30363d;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 20;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+  pointer-events: none;
+}
+.bottom-panel.visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.bottom-panel .unit-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 140px;
+}
+.bottom-panel .unit-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+.bottom-panel .unit-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+.bottom-panel .unit-type {
+  font-size: 11px;
+  color: #7d8590;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.bottom-panel .stat-divider {
+  width: 1px;
+  height: 36px;
+  background: #30363d;
+  flex-shrink: 0;
+}
+.bottom-panel .stats-row {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+.bottom-panel .stat-block {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
-  position: relative;
-  z-index: 10;
+  align-items: center;
+  min-width: 52px;
 }
-.panel-section h3 {
-  font-size: 11px;
+.bottom-panel .stat-label {
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   color: #7d8590;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }
-.unit-detail {
-  background: #0d1117;
-  border-radius: 8px;
-  padding: 12px;
+.bottom-panel .stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e6edf3;
 }
-.unit-detail .unit-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-.unit-detail .unit-type { font-size: 12px; color: #7d8590; margin-bottom: 8px; }
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  padding: 3px 0;
-}
-.stat-row .stat-label { color: #8b949e; }
-.stat-row .stat-value { font-weight: 600; }
-.stat-bonus { color: #ffd700; font-size: 11px; }
-
-.synergy-list { display: flex; flex-direction: column; gap: 6px; }
-.synergy-item {
-  padding: 8px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  line-height: 1.4;
-  background: rgba(255,215,0,0.05);
-  border: 1px solid rgba(255,215,0,0.1);
-  color: #8b949e;
-  transition: all 0.3s;
-}
-.synergy-item.active {
-  background: rgba(255,215,0,0.12);
-  border-color: rgba(255,215,0,0.3);
+.bottom-panel .stat-bonus {
   color: #ffd700;
+  font-size: 11px;
 }
-.synergy-item .synergy-name { font-weight: 600; }
-.synergy-item.active .synergy-name { color: #ffd700; }
-.synergy-item:not(.active) .synergy-name { color: #7d8590; }
+.bottom-panel .hp-bar-wrap {
+  width: 100%;
+  height: 3px;
+  background: #21262d;
+  border-radius: 2px;
+  margin-top: 3px;
+  overflow: hidden;
+}
+.bottom-panel .hp-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+.bottom-panel .unit-desc {
+  font-size: 11px;
+  color: #8b949e;
+  max-width: 200px;
+  line-height: 1.4;
+}
+.bottom-panel .unit-tags {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.bottom-panel .unit-tag {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.bottom-panel .unit-tag.drone {
+  background: rgba(86,212,192,0.15);
+  color: #56d4c0;
+  border: 1px solid rgba(86,212,192,0.3);
+}
+.bottom-panel .unit-tag.salvage {
+  background: rgba(255,215,0,0.12);
+  color: #ffd700;
+  border: 1px solid rgba(255,215,0,0.25);
+}
 
-.action-bar {
+/* ACTION BUTTONS IN TOP BAR */
+.top-bar .action-buttons {
   display: flex;
   gap: 8px;
-  margin-top: auto;
-  padding-top: 12px;
 }
 .btn {
-  flex: 1;
-  padding: 10px;
+  padding: 7px 16px;
   border: 1px solid #30363d;
   background: #21262d;
   color: #e6edf3;
@@ -357,16 +418,6 @@ body {
 .btn.primary { background: #1f6feb; border-color: #1f6feb; }
 .btn.primary:hover { background: #388bfd; }
 .btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-.instructions {
-  font-size: 12px;
-  color: #7d8590;
-  line-height: 1.5;
-  padding: 8px 10px;
-  background: #0d1117;
-  border-radius: 6px;
-}
-.instructions strong { color: #e6edf3; }
 
 /* OVERLAYS */
 .overlay {
@@ -496,40 +547,16 @@ body {
     <div class="wave-info">Wave <span id="wave-num">1</span> / 3</div>
     <div class="turn-info" id="turn-info">Your Turn</div>
     <div class="score-display">Score: <span id="score-num">0</span></div>
+    <div class="action-buttons">
+      <button class="btn" onclick="window._skipUnit()" id="btn-skip" disabled>Skip Unit</button>
+      <button class="btn primary" onclick="window._endTurn()" id="btn-end-turn">End Turn</button>
+    </div>
   </div>
   <div class="main-area">
     <div class="grid-container">
       <canvas id="game-canvas"></canvas>
     </div>
-    <div class="side-panel">
-      <div class="panel-section">
-        <h3>Selected Unit</h3>
-        <div id="unit-detail" class="unit-detail">
-          <div style="color: #7d8590; font-size: 13px;">Click a unit to select</div>
-        </div>
-      </div>
-      <div class="panel-section">
-        <h3>Synergies</h3>
-        <div id="synergy-list" class="synergy-list"></div>
-      </div>
-      <div class="panel-section">
-        <h3>How to Play</h3>
-        <div class="instructions">
-          <strong>Click</strong> unit to select<br>
-          <strong>Blue tiles</strong> = move range<br>
-          <strong style="color:#32cd82">Green tiles</strong> = move + attack<br>
-          <strong style="color:#ff5555">Red tiles</strong> = attack targets<br>
-          <strong>Red badge</strong> = incoming damage<br>
-          <strong>Gold glow</strong> = synergy active<br>
-          Click selected unit = skip step<br>
-          <strong>Drag</strong> to rotate camera
-        </div>
-      </div>
-      <div class="action-bar">
-        <button class="btn" onclick="window._skipUnit()" id="btn-skip" disabled>Skip Unit</button>
-        <button class="btn primary" onclick="window._endTurn()" id="btn-end-turn">End Turn</button>
-      </div>
-    </div>
+    <div id="bottom-panel" class="bottom-panel"></div>
   </div>
 </div>
 
@@ -2051,8 +2078,10 @@ function renderFactionCards() {
 
 function showArmyBuilder(factionId) {
   armyBuilderState.faction = factionId;
-  armyBuilderState.selectedUnits = [];
   const f = FACTIONS[factionId];
+  armyBuilderState.selectedUnits = (f.coreList || []).map(
+    type => ({ ...f.roster.find(r => r.type === type) })
+  );
   document.getElementById('army-builder-title').textContent = f.name;
   document.getElementById('army-builder-title').style.color = f.color;
   document.getElementById('army-total').textContent = armyBuilderState.pointLevel;
@@ -2736,7 +2765,6 @@ function showDraft(callback) {
 function render() {
   Renderer.update();
   renderUnitDetail();
-  renderSynergies();
   document.getElementById('wave-num').textContent = state.wave + 1;
   document.getElementById('score-num').textContent = state.score;
   document.getElementById('turn-info').textContent =
@@ -2745,10 +2773,10 @@ function render() {
 }
 
 function renderUnitDetail() {
-  const el = document.getElementById('unit-detail');
+  const panel = document.getElementById('bottom-panel');
   const unit = state.selectedUnit;
   if (!unit) {
-    el.innerHTML = '<div style="color:#7d8590;font-size:13px;">Click a unit to select</div>';
+    panel.classList.remove('visible');
     return;
   }
   const isPlayer = state.playerUnits.includes(unit);
@@ -2756,35 +2784,53 @@ function renderUnitDetail() {
   const totalAtk = unit.atk + (unit.bonusAtk || 0);
   const totalArmor = unit.armor + (unit.bonusArmor || 0);
   const totalMove = unit.move + (unit.bonusMove || 0);
-  const atkBonus = unit.bonusAtk ? ` <span class="stat-bonus">(+${unit.bonusAtk})</span>` : '';
-  const armorBonus = unit.bonusArmor ? ` <span class="stat-bonus">(+${unit.bonusArmor})</span>` : '';
-  const moveBonus = unit.bonusMove ? ` <span class="stat-bonus">(+${unit.bonusMove})</span>` : '';
-  const salvageLine = (unit.salvageTokens > 0) ? `<div class="stat-row"><span class="stat-label">Salvage</span><span class="stat-value" style="color:#ffd700">${unit.salvageTokens}</span></div>` : '';
-  const droneLine = unit.isDrone ? `<div class="stat-row"><span class="stat-label">Type</span><span class="stat-value" style="color:#56d4c0">Drone</span></div>` : '';
+  const atkBonus = unit.bonusAtk ? ` <span class="stat-bonus">+${unit.bonusAtk}</span>` : '';
+  const armorBonus = unit.bonusArmor ? ` <span class="stat-bonus">+${unit.bonusArmor}</span>` : '';
+  const moveBonus = unit.bonusMove ? ` <span class="stat-bonus">+${unit.bonusMove}</span>` : '';
+  const hpRatio = unit.hp / unit.maxHp;
+  const hpCol = hpColor(hpRatio);
 
-  el.innerHTML = `
-    <div class="unit-name" style="color:${color}">${unit.icon} ${unit.name}</div>
-    <div class="unit-type">${isPlayer ? FACTIONS[state.faction].name : 'Enemy'}</div>
-    <div class="stat-row"><span class="stat-label">HP</span><span class="stat-value">${unit.hp} / ${unit.maxHp}</span></div>
-    <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-value">${totalAtk}${atkBonus}</span></div>
-    <div class="stat-row"><span class="stat-label">Armor</span><span class="stat-value">${totalArmor}${armorBonus}</span></div>
-    <div class="stat-row"><span class="stat-label">Move</span><span class="stat-value">${totalMove}${moveBonus}</span></div>
-    <div class="stat-row"><span class="stat-label">Range</span><span class="stat-value">${unit.range}</span></div>
-    ${salvageLine}${droneLine}
+  let tags = '';
+  if (unit.isDrone) tags += '<span class="unit-tag drone">Drone</span>';
+  if (unit.salvageTokens > 0) tags += `<span class="unit-tag salvage">Salvage ×${unit.salvageTokens}</span>`;
+
+  panel.innerHTML = `
+    <div class="unit-identity">
+      <span class="unit-icon" style="color:${color}">${unit.icon}</span>
+      <div>
+        <div class="unit-name" style="color:${color}">${unit.name}</div>
+        <div class="unit-type">${isPlayer ? FACTIONS[state.faction].name : 'Enemy'}</div>
+      </div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stats-row">
+      <div class="stat-block">
+        <span class="stat-label">HP</span>
+        <span class="stat-value" style="color:${hpCol}">${unit.hp}<span style="color:#7d8590;font-size:12px;font-weight:400">/${unit.maxHp}</span></span>
+        <div class="hp-bar-wrap"><div class="hp-bar-fill" style="width:${hpRatio * 100}%;background:${hpCol}"></div></div>
+      </div>
+      <div class="stat-block">
+        <span class="stat-label">ATK</span>
+        <span class="stat-value">${totalAtk}${atkBonus}</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-label">Armor</span>
+        <span class="stat-value">${totalArmor}${armorBonus}</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-label">Move</span>
+        <span class="stat-value">${totalMove}${moveBonus}</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-label">Range</span>
+        <span class="stat-value">${unit.range}</span>
+      </div>
+    </div>
+    ${tags ? `<div class="stat-divider"></div><div class="unit-tags">${tags}</div>` : ''}
   `;
+  panel.classList.add('visible');
 }
 
-function renderSynergies() {
-  const el = document.getElementById('synergy-list');
-  const f = FACTIONS[state.faction];
-  el.innerHTML = f.synergies.map(s => {
-    const active = state.activeSynergies.includes(s.id);
-    return `<div class="synergy-item ${active ? 'active' : ''}">
-      <div class="synergy-name">${active ? '\u2605 ' : '\u2606 '}${s.name}</div>
-      <div>${s.desc}</div>
-    </div>`;
-  }).join('');
-}
 
 function hpColor(ratio) {
   if (ratio > 0.6) return '#3fb950';
@@ -2865,17 +2911,44 @@ function onCellClick(x, y) {
 }
 
 function renderEnemyDetail(enemy) {
-  const el = document.getElementById('unit-detail');
+  const panel = document.getElementById('bottom-panel');
   const color = enemy.color || '#ff5555';
-  el.innerHTML = `
-    <div class="unit-name" style="color:${color}">${enemy.icon} ${enemy.name}</div>
-    <div class="unit-type">Enemy</div>
-    <div class="stat-row"><span class="stat-label">HP</span><span class="stat-value">${enemy.hp} / ${enemy.maxHp}</span></div>
-    <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-value">${enemy.atk}</span></div>
-    <div class="stat-row"><span class="stat-label">Armor</span><span class="stat-value">${enemy.armor}</span></div>
-    <div class="stat-row"><span class="stat-label">Move</span><span class="stat-value">${enemy.move}</span></div>
-    <div class="stat-row"><span class="stat-label">Range</span><span class="stat-value">${enemy.range}</span></div>
+  const hpRatio = enemy.hp / enemy.maxHp;
+  const hpCol = hpColor(hpRatio);
+  panel.innerHTML = `
+    <div class="unit-identity">
+      <span class="unit-icon" style="color:${color}">${enemy.icon}</span>
+      <div>
+        <div class="unit-name" style="color:${color}">${enemy.name}</div>
+        <div class="unit-type">Enemy</div>
+      </div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stats-row">
+      <div class="stat-block">
+        <span class="stat-label">HP</span>
+        <span class="stat-value" style="color:${hpCol}">${enemy.hp}<span style="color:#7d8590;font-size:12px;font-weight:400">/${enemy.maxHp}</span></span>
+        <div class="hp-bar-wrap"><div class="hp-bar-fill" style="width:${hpRatio * 100}%;background:${hpCol}"></div></div>
+      </div>
+      <div class="stat-block">
+        <span class="stat-label">ATK</span>
+        <span class="stat-value">${enemy.atk}</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-label">Armor</span>
+        <span class="stat-value">${enemy.armor}</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-label">Move</span>
+        <span class="stat-value">${enemy.move}</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-label">Range</span>
+        <span class="stat-value">${enemy.range}</span>
+      </div>
+    </div>
   `;
+  panel.classList.add('visible');
 }
 
 // ============================================================

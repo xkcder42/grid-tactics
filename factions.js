@@ -77,6 +77,7 @@ export const FACTIONS = {
         }
       }
     ],
+    coreList: ['commander', 'rifleman', 'shock_trooper', 'medic', 'scout'],
     startPositions: [{x:0,y:0},{x:0,y:1},{x:1,y:2},{x:0,y:3},{x:1,y:4}]
   },
   convergence: {
@@ -143,6 +144,7 @@ export const FACTIONS = {
         }
       }
     ],
+    coreList: ['nexus_core', 'sentinel', 'adapter', 'reclaimer'],
     startPositions: [{x:0,y:0},{x:0,y:1},{x:1,y:2},{x:0,y:3},{x:1,y:4}]
   }
 };
