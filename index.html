@@ -1,0 +1,2951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid Tactics 3D</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+.screen { display: none; width: 100%; height: 100vh; }
+.screen.active { display: flex; }
+
+/* FACTION SELECT */
+#faction-select {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  overflow-y: auto;
+  padding: 24px;
+}
+#faction-select h1 {
+  font-size: 42px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+#faction-select .subtitle {
+  font-size: 15px;
+  color: #7d8590;
+  margin-top: -20px;
+  letter-spacing: 1px;
+}
+.faction-cards { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; max-width: 1100px; }
+.faction-card {
+  width: 250px;
+  padding: 28px;
+  background: #161b22;
+  border: 2px solid #30363d;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.faction-card:hover {
+  border-color: #58a6ff;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(88,166,255,0.15);
+}
+.faction-card h2 { font-size: 22px; margin-bottom: 8px; }
+.faction-card .playstyle {
+  font-size: 13px;
+  color: #58a6ff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.faction-card .desc { font-size: 14px; color: #8b949e; line-height: 1.5; }
+.faction-card .units { margin-top: 14px; font-size: 13px; color: #7d8590; }
+.faction-card .synergy-preview {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(255,215,0,0.08);
+  border-radius: 6px;
+  font-size: 13px;
+  color: #ffd700;
+}
+.faction-vanguard { color: #4a9eff; }
+.faction-convergence { color: #56d4c0; }
+
+/* POINT LEVEL SELECTOR */
+.point-level-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.point-level-btn {
+  padding: 10px 20px;
+  background: #161b22;
+  border: 2px solid #30363d;
+  border-radius: 8px;
+  color: #8b949e;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.point-level-btn:hover { border-color: #58a6ff; color: #e6edf3; }
+.point-level-btn.active {
+  border-color: #58a6ff;
+  color: #e6edf3;
+  background: #1c2333;
+}
+.point-level-btn .pts { font-weight: 700; color: #ffd700; }
+
+/* ARMY BUILDER SCREEN */
+#army-builder {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+}
+#army-builder h1 {
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.army-builder-layout {
+  display: flex;
+  gap: 24px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 70vh;
+}
+.roster-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+.roster-panel h3 {
+  font-size: 14px;
+  color: #7d8590;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.roster-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #161b22;
+  border: 2px solid #30363d;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.roster-card:hover:not(.disabled) {
+  border-color: #58a6ff;
+  transform: translateX(4px);
+}
+.roster-card.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.roster-card .unit-icon { font-size: 22px; width: 30px; text-align: center; }
+.roster-card .unit-info { flex: 1; }
+.roster-card .unit-name { font-size: 14px; font-weight: 600; }
+.roster-card .unit-desc { font-size: 11px; color: #7d8590; margin-top: 2px; }
+.roster-card .unit-stats { font-size: 11px; color: #8b949e; margin-top: 3px; font-family: monospace; }
+.roster-card .unit-cost {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffd700;
+  min-width: 36px;
+  text-align: right;
+}
+
+.army-panel {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.army-panel h3 {
+  font-size: 14px;
+  color: #7d8590;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.army-budget {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #161b22;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.army-budget .spent { color: #ffd700; font-weight: 700; font-size: 18px; }
+.army-budget .remaining { color: #8b949e; }
+.army-budget.over .spent { color: #f85149; }
+.army-slots {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+.army-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+}
+.army-slot .unit-icon { font-size: 18px; }
+.army-slot .slot-info { flex: 1; }
+.army-slot .slot-name { font-size: 13px; font-weight: 600; }
+.army-slot .slot-cost { font-size: 13px; color: #ffd700; }
+.army-slot .remove-btn {
+  background: none;
+  border: none;
+  color: #f85149;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.army-slot .remove-btn:hover { background: rgba(248,81,73,0.15); }
+.army-empty-slot {
+  padding: 10px 12px;
+  background: #161b22;
+  border: 1px dashed #30363d;
+  border-radius: 8px;
+  color: #30363d;
+  font-size: 12px;
+  text-align: center;
+}
+.army-errors {
+  font-size: 12px;
+  color: #f85149;
+  min-height: 18px;
+}
+.army-builder-actions {
+  display: flex;
+  gap: 12px;
+}
+.army-builder-actions .btn {
+  padding: 10px 28px;
+}
+
+/* GAME SCREEN */
+#game-screen { flex-direction: column; height: 100vh; }
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 24px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  min-height: 48px;
+  position: relative;
+  z-index: 10;
+}
+.top-bar .wave-info { font-size: 15px; color: #8b949e; }
+.top-bar .wave-info span { color: #e6edf3; font-weight: 600; }
+.top-bar .score-display { font-size: 15px; }
+.top-bar .score-display span { color: #ffd700; font-weight: 600; }
+.top-bar .turn-info { font-size: 14px; color: #7d8590; }
+
+.main-area { flex: 1; display: flex; overflow: hidden; }
+
+/* CANVAS CONTAINER */
+.grid-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* SIDE PANEL */
+.side-panel {
+  width: 240px;
+  background: #161b22;
+  border-left: 1px solid #30363d;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  position: relative;
+  z-index: 10;
+}
+.panel-section h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #7d8590;
+  margin-bottom: 8px;
+}
+.unit-detail {
+  background: #0d1117;
+  border-radius: 8px;
+  padding: 12px;
+}
+.unit-detail .unit-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.unit-detail .unit-type { font-size: 12px; color: #7d8590; margin-bottom: 8px; }
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 3px 0;
+}
+.stat-row .stat-label { color: #8b949e; }
+.stat-row .stat-value { font-weight: 600; }
+.stat-bonus { color: #ffd700; font-size: 11px; }
+
+.synergy-list { display: flex; flex-direction: column; gap: 6px; }
+.synergy-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  background: rgba(255,215,0,0.05);
+  border: 1px solid rgba(255,215,0,0.1);
+  color: #8b949e;
+  transition: all 0.3s;
+}
+.synergy-item.active {
+  background: rgba(255,215,0,0.12);
+  border-color: rgba(255,215,0,0.3);
+  color: #ffd700;
+}
+.synergy-item .synergy-name { font-weight: 600; }
+.synergy-item.active .synergy-name { color: #ffd700; }
+.synergy-item:not(.active) .synergy-name { color: #7d8590; }
+
+.action-bar {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+.btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #30363d;
+  background: #21262d;
+  color: #e6edf3;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.btn:hover { background: #30363d; border-color: #8b949e; }
+.btn.primary { background: #1f6feb; border-color: #1f6feb; }
+.btn.primary:hover { background: #388bfd; }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.instructions {
+  font-size: 12px;
+  color: #7d8590;
+  line-height: 1.5;
+  padding: 8px 10px;
+  background: #0d1117;
+  border-radius: 6px;
+}
+.instructions strong { color: #e6edf3; }
+
+/* OVERLAYS */
+.overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(13,17,23,0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fade-in 0.3s;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.overlay h2 {
+  font-size: 48px;
+  font-weight: 300;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.overlay .sub { font-size: 16px; color: #8b949e; margin-bottom: 32px; }
+.overlay .btn { width: 200px; flex: none; padding: 14px; font-size: 15px; }
+
+/* DRAFT */
+.draft-overlay h2 { font-size: 32px; margin-bottom: 24px; color: #ffd700; }
+.draft-cards { display: flex; gap: 16px; }
+.draft-card {
+  width: 220px;
+  padding: 20px;
+  background: #161b22;
+  border: 2px solid #30363d;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.draft-card:hover {
+  border-color: #ffd700;
+  transform: translateY(-4px);
+  box-shadow: 0 6px 24px rgba(255,215,0,0.1);
+}
+.draft-card .draft-icon { font-size: 32px; margin-bottom: 10px; }
+.draft-card .draft-name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.draft-card .draft-desc { font-size: 13px; color: #8b949e; line-height: 1.4; }
+
+/* GAME OVER */
+#game-over {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+#game-over h1 { font-size: 48px; font-weight: 300; letter-spacing: 4px; }
+#game-over .final-score { font-size: 64px; font-weight: 700; color: #ffd700; }
+.score-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 360px;
+}
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  padding: 6px 0;
+  border-bottom: 1px solid #30363d;
+}
+.score-row .label { color: #8b949e; }
+.score-row .value { font-weight: 600; }
+#game-over .btn {
+  width: 200px;
+  flex: none;
+  padding: 14px;
+  font-size: 15px;
+  margin-top: 12px;
+}
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="faction-select" class="screen active">
+  <h1>Grid Tactics</h1>
+  <p class="subtitle">Tactical roguelike &mdash; 3D</p>
+  <div class="point-level-selector" id="point-level-selector">
+    <button class="point-level-btn" data-pts="75" onclick="window._setPointLevel(75)">Skirmish <span class="pts">75</span></button>
+    <button class="point-level-btn active" data-pts="100" onclick="window._setPointLevel(100)">Standard <span class="pts">100</span></button>
+    <button class="point-level-btn" data-pts="125" onclick="window._setPointLevel(125)">Grand <span class="pts">125</span></button>
+  </div>
+  <div class="faction-cards" id="faction-cards-container"></div>
+</div>
+
+<div id="army-builder" class="screen">
+  <h1 id="army-builder-title">Build Your Army</h1>
+  <div class="army-builder-layout">
+    <div class="roster-panel">
+      <h3>Available Units</h3>
+      <div id="roster-list"></div>
+    </div>
+    <div class="army-panel">
+      <h3>Your Army</h3>
+      <div class="army-budget" id="army-budget">
+        <span>Points: <span class="spent" id="army-spent">0</span> / <span id="army-total">100</span></span>
+        <span class="remaining" id="army-remaining">100 remaining</span>
+      </div>
+      <div class="army-slots" id="army-slots"></div>
+      <div class="army-errors" id="army-errors"></div>
+      <div class="army-builder-actions">
+        <button class="btn" onclick="window._backToFactionSelect()">Back</button>
+        <button class="btn primary" id="btn-start-battle" onclick="window._confirmArmy()" disabled>Start Battle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="game-screen" class="screen">
+  <div class="top-bar">
+    <div class="wave-info">Wave <span id="wave-num">1</span> / 3</div>
+    <div class="turn-info" id="turn-info">Your Turn</div>
+    <div class="score-display">Score: <span id="score-num">0</span></div>
+  </div>
+  <div class="main-area">
+    <div class="grid-container">
+      <canvas id="game-canvas"></canvas>
+    </div>
+    <div class="side-panel">
+      <div class="panel-section">
+        <h3>Selected Unit</h3>
+        <div id="unit-detail" class="unit-detail">
+          <div style="color: #7d8590; font-size: 13px;">Click a unit to select</div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <h3>Synergies</h3>
+        <div id="synergy-list" class="synergy-list"></div>
+      </div>
+      <div class="panel-section">
+        <h3>How to Play</h3>
+        <div class="instructions">
+          <strong>Click</strong> unit to select<br>
+          <strong>Blue tiles</strong> = move range<br>
+          <strong style="color:#32cd82">Green tiles</strong> = move + attack<br>
+          <strong style="color:#ff5555">Red tiles</strong> = attack targets<br>
+          <strong>Red badge</strong> = incoming damage<br>
+          <strong>Gold glow</strong> = synergy active<br>
+          Click selected unit = skip step<br>
+          <strong>Drag</strong> to rotate camera
+        </div>
+      </div>
+      <div class="action-bar">
+        <button class="btn" onclick="window._skipUnit()" id="btn-skip" disabled>Skip Unit</button>
+        <button class="btn primary" onclick="window._endTurn()" id="btn-end-turn">End Turn</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="game-over" class="screen">
+  <h1 id="game-over-title">Victory</h1>
+  <div class="final-score" id="final-score">0</div>
+  <div class="score-breakdown" id="score-breakdown"></div>
+  <button class="btn primary" onclick="location.reload()">Play Again</button>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { FACTIONS } from './factions.js';
+
+// ============================================================
+// CONFIG
+// ============================================================
+const COLS = 8;
+const ROWS = 6;
+const TILE_SIZE = 1.1;
+const TILE_GEO_SIZE = 1.0;
+const TILE_HEIGHT = 0.12;
+
+const WAVES = [
+  {
+    label: 'Wave 1 \u2014 Skirmish',
+    enemies: [
+      { type: 'grunt', name: 'Grunt', icon: '\u25C6', hp: 5, atk: 2, armor: 0, move: 2, range: 1, color: '#ff5555' },
+      { type: 'grunt', name: 'Grunt', icon: '\u25C6', hp: 5, atk: 2, armor: 0, move: 2, range: 1, color: '#ff5555' },
+      { type: 'grunt', name: 'Grunt', icon: '\u25C6', hp: 5, atk: 2, armor: 0, move: 2, range: 1, color: '#ff5555' },
+    ],
+    positions: [{x:6,y:0},{x:7,y:2},{x:6,y:4}]
+  },
+  {
+    label: 'Wave 2 \u2014 Escalation',
+    enemies: [
+      { type: 'grunt',  name: 'Grunt',  icon: '\u25C6', hp: 6,  atk: 3, armor: 0, move: 2, range: 1, color: '#ff5555' },
+      { type: 'grunt',  name: 'Grunt',  icon: '\u25C6', hp: 6,  atk: 3, armor: 0, move: 2, range: 1, color: '#ff5555' },
+      { type: 'archer', name: 'Archer', icon: '\u2316', hp: 4,  atk: 3, armor: 0, move: 1, range: 3, color: '#ff8844' },
+      { type: 'grunt',  name: 'Grunt',  icon: '\u25C6', hp: 6,  atk: 3, armor: 1, move: 2, range: 1, color: '#ff6655' },
+    ],
+    positions: [{x:6,y:0},{x:7,y:2},{x:7,y:4},{x:6,y:5}]
+  },
+  {
+    label: 'Wave 3 \u2014 Onslaught',
+    enemies: [
+      { type: 'grunt',  name: 'Grunt',  icon: '\u25C6', hp: 6,  atk: 3, armor: 0, move: 2, range: 1, color: '#ff5555' },
+      { type: 'archer', name: 'Archer', icon: '\u2316', hp: 5,  atk: 3, armor: 0, move: 1, range: 3, color: '#ff8844' },
+      { type: 'brute',  name: 'Brute',  icon: '\u2588', hp: 14, atk: 5, armor: 2, move: 1, range: 1, color: '#cc2222' },
+      { type: 'archer', name: 'Archer', icon: '\u2316', hp: 5,  atk: 3, armor: 0, move: 1, range: 3, color: '#ff8844' },
+      { type: 'grunt',  name: 'Grunt',  icon: '\u25C6', hp: 6,  atk: 3, armor: 0, move: 2, range: 1, color: '#ff5555' },
+    ],
+    positions: [{x:6,y:0},{x:7,y:1},{x:7,y:3},{x:7,y:4},{x:6,y:5}]
+  }
+];
+
+const DRAFT_POOL = [
+  { icon: '\u2764', name: '+3 HP to All', desc: 'All units gain +3 max HP and heal 3.', apply(s) { s.playerUnits.forEach(u => { if (u.hp > 0) { u.maxHp += 3; u.hp = Math.min(u.hp + 3, u.maxHp); } }); }},
+  { icon: '\u2694', name: '+1 Attack', desc: 'All units gain +1 base attack.', apply(s) { s.playerUnits.forEach(u => { if (u.hp > 0) u.atk += 1; }); }},
+  { icon: '\u26E8', name: '+1 Armor', desc: 'All units gain +1 base armor.', apply(s) { s.playerUnits.forEach(u => { if (u.hp > 0) u.armor += 1; }); }},
+  { icon: '\u27A1', name: '+1 Move', desc: 'All units gain +1 movement range.', apply(s) { s.playerUnits.forEach(u => { if (u.hp > 0) u.move += 1; }); }},
+  { icon: '\u2748', name: 'Heal All', desc: 'All units heal to full HP.', apply(s) { s.playerUnits.forEach(u => { if (u.hp > 0) u.hp = u.maxHp; }); }},
+  { icon: '\u2726', name: 'Elite Training', desc: 'Strongest unit gains +2 ATK, +2 HP.', apply(s) {
+    const best = s.playerUnits.filter(u => u.hp > 0).sort((a,b) => b.atk - a.atk)[0];
+    if (best) { best.atk += 2; best.maxHp += 2; best.hp = Math.min(best.hp + 2, best.maxHp); }
+  }},
+  { icon: '\u2606', name: 'Fortify', desc: 'Highest-HP unit gains +2 armor.', apply(s) {
+    const best = s.playerUnits.filter(u => u.hp > 0).sort((a,b) => b.hp - a.hp)[0];
+    if (best) best.armor += 2;
+  }},
+  { icon: '\u21C4', name: 'Flanking Drills', desc: '+1 range and +1 move to fastest unit.', apply(s) {
+    const best = s.playerUnits.filter(u => u.hp > 0).sort((a,b) => b.move - a.move)[0];
+    if (best) { best.range += 1; best.move += 1; }
+  }},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {};
+let animating = false;
+
+function manhattan(a, b) {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+
+function initState(factionId, selectedUnits) {
+  const f = FACTIONS[factionId];
+  const units = selectedUnits || f.roster.slice(0, 4);
+  const playerUnits = units.map((u, i) => ({
+    ...u,
+    id: 'p' + i,
+    faction: factionId,
+    maxHp: u.hp,
+    bonusAtk: 0,
+    bonusArmor: 0,
+    bonusMove: 0,
+    salvageTokens: 0,
+    salvageCycle: 0,
+    canProliferate: u.canProliferate || false,
+    proliferateCount: u.proliferateCount || 0,
+    isDrone: false,
+    adapterCycle: 0,
+    acted: false,
+    pos: { ...f.startPositions[i] }
+  }));
+  state = {
+    faction: factionId,
+    phase: 'player_turn',
+    wave: 0,
+    turn: 0,
+    totalTurns: 0,
+    score: 0,
+    synergiesActivated: 0,
+    cleanKills: 0,
+    damageDealt: 0,
+    damageTaken: 0,
+    playerUnits,
+    enemies: [],
+    selectedUnit: null,
+    selectedPhase: null,
+    moveTargets: [],
+    attackTargets: [],
+    enemyIntents: [],
+    activeSynergies: [],
+    gameOver: false,
+    enemyStrategy: pickEnemyStrategy()
+  };
+}
+
+// ============================================================
+// THREE.JS GLOBALS
+// ============================================================
+let scene, camera, renderer3d, controls, clock;
+const tileMeshes = new Map();
+const unitMeshes = new Map();
+const intentSprites = [];
+const intentLines = [];
+const synergyLights = [];
+let selectionRing = null;
+let sceneReady = false;
+const cameraShake = { x: 0, y: 0 };
+
+// ============================================================
+// COORDINATE MAPPING
+// ============================================================
+function gridToWorld(x, y) {
+  return new THREE.Vector3(
+    (x - COLS / 2 + 0.5) * TILE_SIZE,
+    0,
+    (y - ROWS / 2 + 0.5) * TILE_SIZE
+  );
+}
+
+function worldToGrid(pos) {
+  const x = Math.round(pos.x / TILE_SIZE + COLS / 2 - 0.5);
+  const y = Math.round(pos.z / TILE_SIZE + ROWS / 2 - 0.5);
+  if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return null;
+  return { x, y };
+}
+
+// ============================================================
+// ANIMATION ENGINE
+// ============================================================
+const activeTweens = [];
+const activeEffects = [];
+
+function tweenTo(target, props, duration, easing) {
+  return new Promise(resolve => {
+    const starts = {};
+    for (const k in props) starts[k] = target[k];
+    activeTweens.push({ type: 'props', target, starts, ends: props, duration, elapsed: 0, easing: easing || easeInOutCubic, resolve });
+  });
+}
+
+function tweenCustom(duration, updateFn, easing) {
+  return new Promise(resolve => {
+    activeTweens.push({ type: 'custom', duration, elapsed: 0, easing: easing || easeInOutCubic, update: updateFn, resolve });
+  });
+}
+
+function updateTweens(delta) {
+  for (let i = activeTweens.length - 1; i >= 0; i--) {
+    const tw = activeTweens[i];
+    tw.elapsed = Math.min(tw.elapsed + delta, tw.duration);
+    const rawT = tw.duration > 0 ? tw.elapsed / tw.duration : 1;
+    const t = tw.easing(rawT);
+    if (tw.type === 'props') {
+      for (const k in tw.ends) {
+        tw.target[k] = tw.starts[k] + (tw.ends[k] - tw.starts[k]) * t;
+      }
+    } else {
+      tw.update(t, rawT);
+    }
+    if (rawT >= 1) {
+      activeTweens.splice(i, 1);
+      tw.resolve();
+    }
+  }
+}
+
+function updateEffects(delta) {
+  for (let i = activeEffects.length - 1; i >= 0; i--) {
+    const fx = activeEffects[i];
+    fx.life += delta;
+    const done = fx.update(delta, fx.life);
+    if (done) {
+      if (fx.cleanup) fx.cleanup();
+      activeEffects.splice(i, 1);
+    }
+  }
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function easeOutExpo(t) {
+  return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+}
+
+function easeOutBack(t) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// ============================================================
+// PARTICLES & EFFECTS
+// ============================================================
+function spawnParticles(position, color, count) {
+  const colorObj = new THREE.Color(color);
+  for (let i = 0; i < count; i++) {
+    const geo = new THREE.SphereGeometry(0.03, 4, 4);
+    const mat = new THREE.MeshBasicMaterial({ color: colorObj, transparent: true, opacity: 1 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(position);
+    const vx = (Math.random() - 0.5) * 3;
+    const vy = Math.random() * 2.5 + 1;
+    const vz = (Math.random() - 0.5) * 3;
+    const maxLife = 0.4 + Math.random() * 0.3;
+    scene.add(mesh);
+    activeEffects.push({
+      life: 0,
+      update(delta) {
+        mesh.position.x += vx * delta;
+        mesh.position.y += vy * delta;
+        mesh.position.z += vz * delta;
+        vy > 0 && (mesh.position.y -= 4 * delta * this.life);
+        mat.opacity = Math.max(0, 1 - this.life / maxLife);
+        return this.life >= maxLife;
+      },
+      cleanup() {
+        scene.remove(mesh);
+        geo.dispose();
+        mat.dispose();
+      }
+    });
+  }
+}
+
+function spawnDamageText(position, text, color) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.font = 'bold 48px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 5;
+  ctx.strokeText(text, 64, 32);
+  ctx.fillStyle = color;
+  ctx.fillText(text, 64, 32);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.position.copy(position);
+  sprite.position.y += 0.5;
+  sprite.scale.set(0.8, 0.4, 1);
+  scene.add(sprite);
+
+  const startY = sprite.position.y;
+  activeEffects.push({
+    life: 0,
+    update(delta) {
+      sprite.position.y = startY + this.life * 1.5;
+      mat.opacity = Math.max(0, 1 - this.life / 0.8);
+      return this.life >= 0.8;
+    },
+    cleanup() {
+      scene.remove(sprite);
+      texture.dispose();
+      mat.dispose();
+    }
+  });
+}
+
+// ============================================================
+// COMBAT EFFECTS
+// ============================================================
+function shakeCamera(intensity, duration) {
+  activeEffects.push({
+    life: 0,
+    update(delta) {
+      const decay = 1 - this.life / duration;
+      const freq = 25;
+      cameraShake.x = Math.sin(this.life * freq) * intensity * decay;
+      cameraShake.y = Math.cos(this.life * freq * 1.3) * intensity * decay * 0.7;
+      return this.life >= duration;
+    },
+    cleanup() {
+      cameraShake.x = 0;
+      cameraShake.y = 0;
+    }
+  });
+}
+
+function spawnImpactFlash(position, color, intensity) {
+  const light = new THREE.PointLight(new THREE.Color(color), intensity, 6);
+  light.position.copy(position);
+  light.position.y += 0.5;
+  scene.add(light);
+  activeEffects.push({
+    life: 0,
+    update() {
+      light.intensity = intensity * Math.max(0, 1 - this.life / 0.35);
+      return this.life >= 0.35;
+    },
+    cleanup() {
+      scene.remove(light);
+      light.dispose();
+    }
+  });
+}
+
+function spawnShockwave(position, color) {
+  const geo = new THREE.RingGeometry(0.05, 0.15, 32);
+  const mat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(color),
+    transparent: true,
+    opacity: 0.8,
+    side: THREE.DoubleSide,
+    depthTest: false
+  });
+  const ring = new THREE.Mesh(geo, mat);
+  ring.position.copy(position);
+  ring.position.y += 0.08;
+  ring.rotation.x = -Math.PI / 2;
+  ring.renderOrder = 998;
+  scene.add(ring);
+
+  activeEffects.push({
+    life: 0,
+    update() {
+      const progress = this.life / 0.45;
+      const scale = 1 + 11 * easeOutExpo(progress);
+      ring.scale.set(scale, scale, 1);
+      mat.opacity = 0.8 * (1 - progress);
+      return this.life >= 0.45;
+    },
+    cleanup() {
+      scene.remove(ring);
+      geo.dispose();
+      mat.dispose();
+    }
+  });
+}
+
+function spawnDirectionalSparks(origin, direction, color, count) {
+  const colorObj = new THREE.Color(color);
+  for (let i = 0; i < count; i++) {
+    const geo = new THREE.SphereGeometry(0.025, 4, 4);
+    const mat = new THREE.MeshBasicMaterial({ color: colorObj, transparent: true, opacity: 1 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(origin);
+    scene.add(mesh);
+    const spread = 0.6;
+    const speed = 2 + Math.random() * 3;
+    const vx = direction.x * speed + (Math.random() - 0.5) * spread * speed;
+    const vy = 1.5 + Math.random() * 2;
+    const vz = direction.z * speed + (Math.random() - 0.5) * spread * speed;
+    const maxLife = 0.3 + Math.random() * 0.35;
+    activeEffects.push({
+      life: 0,
+      update(delta) {
+        mesh.position.x += vx * delta;
+        mesh.position.y += vy * delta - 5 * delta * this.life;
+        mesh.position.z += vz * delta;
+        mat.opacity = Math.max(0, 1 - this.life / maxLife);
+        const glow = 1 - this.life / maxLife;
+        mesh.scale.setScalar(0.5 + glow * 0.5);
+        return this.life >= maxLife;
+      },
+      cleanup() {
+        scene.remove(mesh);
+        geo.dispose();
+        mat.dispose();
+      }
+    });
+  }
+}
+
+function flashDefender(defData, duration) {
+  if (!defData) return;
+  const origEmissives = [];
+  defData.group.traverse(child => {
+    if (child.isMesh && child.material.emissive) {
+      origEmissives.push({ mesh: child, color: child.material.emissive.getHex(), intensity: child.material.emissiveIntensity });
+      child.material.emissive.setHex(0xffffff);
+      child.material.emissiveIntensity = 0.6;
+    }
+  });
+  activeEffects.push({
+    life: 0,
+    update() {
+      const t = this.life / duration;
+      defData.group.traverse(child => {
+        if (child.isMesh && child.material.emissive) {
+          child.material.emissiveIntensity = 0.6 * (1 - t);
+        }
+      });
+      return this.life >= duration;
+    },
+    cleanup() {
+      for (const entry of origEmissives) {
+        entry.mesh.material.emissive.setHex(entry.color);
+        entry.mesh.material.emissiveIntensity = entry.intensity;
+      }
+    }
+  });
+}
+
+// ============================================================
+// BOARD
+// ============================================================
+function createBoard() {
+  const group = new THREE.Group();
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      const isLight = (x + y) % 2 === 0;
+      const baseColor = isLight ? 0x2a3450 : 0x222a3c;
+      const geo = new THREE.BoxGeometry(TILE_GEO_SIZE, TILE_HEIGHT, TILE_GEO_SIZE);
+      const mat = new THREE.MeshStandardMaterial({
+        color: baseColor,
+        roughness: 0.75,
+        metalness: 0.15,
+        emissive: 0x000000,
+        emissiveIntensity: 0
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      const pos = gridToWorld(x, y);
+      mesh.position.set(pos.x, -TILE_HEIGHT / 2, pos.z);
+      mesh.userData = { gridX: x, gridY: y, baseColor, highlight: 'none' };
+      group.add(mesh);
+      tileMeshes.set(x + ',' + y, mesh);
+    }
+  }
+  return group;
+}
+
+const HIGHLIGHT_COLORS = {
+  none:          { color: null, intensity: 0 },
+  move:          { color: 0x58a6ff, intensity: 0.55 },
+  'move-attack': { color: 0x32cd82, intensity: 0.65 },
+  attack:        { color: 0xff5050, intensity: 0.7 },
+  'intent-target': { color: 0xff2828, intensity: 0.4 },
+  'intent-move': { color: 0xff7832, intensity: 0.3 },
+  synergy:       { color: 0xffd700, intensity: 0.4 },
+  hover:         { color: 0x888888, intensity: 0.15 },
+};
+
+function setTileHighlight(tile, hlState) {
+  const hl = HIGHLIGHT_COLORS[hlState] || HIGHLIGHT_COLORS.none;
+  tile.userData.highlight = hlState;
+  if (hl.color !== null) {
+    tile.material.emissive.setHex(hl.color);
+    tile.material.emissiveIntensity = hl.intensity;
+  } else {
+    tile.material.emissive.setHex(0x000000);
+    tile.material.emissiveIntensity = 0;
+  }
+}
+
+function clearAllHighlights() {
+  for (const tile of tileMeshes.values()) {
+    setTileHighlight(tile, 'none');
+    tile.material.color.setHex(tile.userData.baseColor);
+  }
+}
+
+// ============================================================
+// MODEL FACTORY
+// ============================================================
+function createUnitModel(unitType, color) {
+  const group = new THREE.Group();
+  const c = new THREE.Color(color);
+  const mat = new THREE.MeshStandardMaterial({ color: c, metalness: 0.35, roughness: 0.5, transparent: true, opacity: 1, emissive: c, emissiveIntensity: 0.08 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: c.clone().multiplyScalar(0.55), metalness: 0.4, roughness: 0.5, transparent: true, opacity: 1 });
+  const accentColor = c.clone().multiplyScalar(1.3);
+  accentColor.r = Math.min(1, accentColor.r);
+  accentColor.g = Math.min(1, accentColor.g);
+  accentColor.b = Math.min(1, accentColor.b);
+  const accentMat = new THREE.MeshStandardMaterial({ color: accentColor, metalness: 0.5, roughness: 0.5, transparent: true, opacity: 1, emissive: c, emissiveIntensity: 0.15 });
+
+  switch (unitType) {
+    // ---- VANGUARD COALITION ----
+    case 'commander': {
+      // Tall leader with broad shoulders and command antenna crest
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 0.35, 8), mat);
+      body.position.y = 0.28;
+      group.add(body);
+      const shoulders = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.05, 0.12), mat);
+      shoulders.position.y = 0.48;
+      group.add(shoulders);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 8), mat);
+      head.position.y = 0.57;
+      group.add(head);
+      const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.18, 4), accentMat);
+      antenna.position.y = 0.72;
+      group.add(antenna);
+      const antennaTip = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 6), accentMat);
+      antennaTip.position.y = 0.82;
+      group.add(antennaTip);
+      const cape = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.3, 0.025), darkMat);
+      cape.position.set(0, 0.26, -0.07);
+      group.add(cape);
+      group.userData.modelHeight = 0.85;
+      break;
+    }
+    case 'rifleman': {
+      // Standard soldier with gun barrel extending forward
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.28, 8), mat);
+      body.position.y = 0.24;
+      group.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 8), mat);
+      head.position.y = 0.44;
+      group.add(head);
+      const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.16, 6), darkMat);
+      armR.position.set(0.14, 0.3, 0);
+      armR.rotation.z = -0.25;
+      group.add(armR);
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 6), darkMat);
+      barrel.position.set(0.22, 0.28, 0);
+      barrel.rotation.z = Math.PI / 2;
+      group.add(barrel);
+      const stock = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.04), mat);
+      stock.position.set(0.08, 0.28, 0);
+      group.add(stock);
+      group.userData.modelHeight = 0.55;
+      break;
+    }
+    case 'shock_trooper': {
+      // Heavy melee with thick armor plates and wide stance
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.3, 0.26), mat);
+      torso.position.y = 0.35;
+      group.add(torso);
+      const headBox = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.1), darkMat);
+      headBox.position.y = 0.54;
+      group.add(headBox);
+      const shoulderL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.12), mat);
+      shoulderL.position.set(-0.22, 0.42, 0);
+      group.add(shoulderL);
+      const shoulderR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.12), mat);
+      shoulderR.position.set(0.22, 0.42, 0);
+      group.add(shoulderR);
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.2, 0.11), darkMat);
+      legL.position.set(-0.1, 0.1, 0);
+      group.add(legL);
+      const legR = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.2, 0.11), darkMat);
+      legR.position.set(0.1, 0.1, 0);
+      group.add(legR);
+      group.scale.set(1.05, 1.05, 1.05);
+      group.userData.modelHeight = 0.65;
+      break;
+    }
+    case 'sniper': {
+      // Slim tall figure with very long thin barrel
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.32, 8), mat);
+      body.position.y = 0.26;
+      group.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), mat);
+      head.position.y = 0.47;
+      group.add(head);
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.5, 4), darkMat);
+      barrel.position.set(0.2, 0.34, 0);
+      barrel.rotation.z = Math.PI / 2;
+      group.add(barrel);
+      const scope = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.1, 6), accentMat);
+      scope.position.set(0.15, 0.3, 0);
+      scope.rotation.z = Math.PI / 2;
+      group.add(scope);
+      group.userData.modelHeight = 0.55;
+      break;
+    }
+    case 'medic': {
+      // Slightly smaller humanoid with cross symbol on top; white/light-blue to stand out as a support unit
+      const medicBodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.6, emissive: 0xaaddff, emissiveIntensity: 0.1 });
+      const medicHeadMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.6 });
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.08, 0.25, 8), medicBodyMat);
+      body.position.y = 0.22;
+      group.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), medicHeadMat);
+      head.position.y = 0.4;
+      group.add(head);
+      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.1, 0.012), accentMat);
+      crossV.position.y = 0.52;
+      group.add(crossV);
+      const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.025, 0.012), accentMat);
+      crossH.position.y = 0.52;
+      group.add(crossH);
+      group.userData.modelHeight = 0.55;
+      break;
+    }
+    case 'engineer': {
+      // Stocky figure with wrench appendage on top
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.26, 0.18), mat);
+      body.position.y = 0.23;
+      group.add(body);
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.1), darkMat);
+      head.position.y = 0.42;
+      group.add(head);
+      const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.16, 6), darkMat);
+      armL.position.set(-0.15, 0.25, 0);
+      armL.rotation.z = 0.3;
+      group.add(armL);
+      const wrenchShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.14, 4), accentMat);
+      wrenchShaft.position.set(0.16, 0.42, 0);
+      group.add(wrenchShaft);
+      const wrenchHead = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.025, 0.025), accentMat);
+      wrenchHead.position.set(0.16, 0.5, 0);
+      group.add(wrenchHead);
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.08), darkMat);
+      legL.position.set(-0.07, 0.08, 0);
+      group.add(legL);
+      const legR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.08), darkMat);
+      legR.position.set(0.07, 0.08, 0);
+      group.add(legR);
+      group.userData.modelHeight = 0.55;
+      break;
+    }
+    case 'scout': {
+      // Smallest unit, low and sleek, angled forward like running
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.2, 8), mat);
+      body.position.y = 0.17;
+      body.rotation.x = 0.2;
+      group.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), mat);
+      head.position.set(0.03, 0.32, 0.04);
+      group.add(head);
+      const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.14, 4), darkMat);
+      legL.position.set(-0.04, 0.07, 0.02);
+      legL.rotation.x = 0.2;
+      group.add(legL);
+      const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.14, 4), darkMat);
+      legR.position.set(0.04, 0.07, -0.02);
+      legR.rotation.x = -0.2;
+      group.add(legR);
+      group.scale.set(0.9, 0.9, 0.9);
+      group.userData.modelHeight = 0.38;
+      break;
+    }
+    case 'grunt': {
+      // Simple enemy soldier
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.12), mat);
+      body.position.y = 0.22;
+      group.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), mat);
+      head.position.y = 0.39;
+      group.add(head);
+      const sword = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.2, 0.015), darkMat);
+      sword.position.set(0.12, 0.25, 0);
+      sword.rotation.z = -0.25;
+      group.add(sword);
+      group.userData.modelHeight = 0.48;
+      break;
+    }
+    case 'archer': {
+      // Tall ranged enemy with bow
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.32, 8), mat);
+      body.position.y = 0.26;
+      group.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), mat);
+      head.position.y = 0.48;
+      group.add(head);
+      // Bow as a partial torus
+      const bow = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.012, 6, 12, Math.PI), darkMat);
+      bow.position.set(-0.13, 0.32, 0);
+      bow.rotation.y = Math.PI / 2;
+      group.add(bow);
+      // Arrow
+      const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.3, 4), accentMat);
+      arrow.position.set(0, 0.32, 0.08);
+      arrow.rotation.x = Math.PI / 2;
+      group.add(arrow);
+      group.userData.modelHeight = 0.55;
+      break;
+    }
+    case 'brute': {
+      // Massive wide enemy
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.32, 0.32), mat);
+      torso.position.y = 0.32;
+      group.add(torso);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), darkMat);
+      head.position.y = 0.54;
+      group.add(head);
+      const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.28, 6), mat);
+      armL.position.set(-0.28, 0.3, 0);
+      armL.rotation.z = 0.3;
+      group.add(armL);
+      const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.28, 6), mat);
+      armR.position.set(0.28, 0.3, 0);
+      armR.rotation.z = -0.3;
+      group.add(armR);
+      const fistL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), darkMat);
+      fistL.position.set(-0.34, 0.16, 0);
+      group.add(fistL);
+      const fistR = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), darkMat);
+      fistR.position.set(0.34, 0.16, 0);
+      group.add(fistR);
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.1), darkMat);
+      legL.position.set(-0.12, 0.1, 0);
+      group.add(legL);
+      const legR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.1), darkMat);
+      legR.position.set(0.12, 0.1, 0);
+      group.add(legR);
+      group.scale.set(1.15, 1.15, 1.15);
+      group.userData.modelHeight = 0.7;
+      break;
+    }
+    // ---- THE CONVERGENCE ----
+    case 'nexus_core': {
+      // Central orb surrounded by ring and orbiting spheres — hub of the network
+      const core = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 12), mat);
+      core.position.y = 0.36;
+      group.add(core);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.014, 8, 24), accentMat);
+      ring.position.y = 0.36;
+      ring.rotation.x = Math.PI / 3;
+      group.add(ring);
+      const orbA = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), accentMat);
+      orbA.position.set(0.18, 0.46, 0);
+      group.add(orbA);
+      const orbB = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), accentMat);
+      orbB.position.set(-0.14, 0.26, 0.12);
+      group.add(orbB);
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 0.14, 8), darkMat);
+      base.position.y = 0.07;
+      group.add(base);
+      group.userData.modelHeight = 0.6;
+      break;
+    }
+    case 'assembler': {
+      // Factory unit with boxy base and articulated arm extensions
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.22, 0.22), mat);
+      base.position.y = 0.21;
+      group.add(base);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.1, 0.14), darkMat);
+      top.position.y = 0.37;
+      group.add(top);
+      const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.22, 4), accentMat);
+      armL.position.set(-0.2, 0.32, 0);
+      armL.rotation.z = 0.5;
+      group.add(armL);
+      const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.22, 4), accentMat);
+      armR.position.set(0.2, 0.32, 0);
+      armR.rotation.z = -0.5;
+      group.add(armR);
+      const clawL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.03, 0.03), darkMat);
+      clawL.position.set(-0.3, 0.22, 0);
+      group.add(clawL);
+      const clawR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.03, 0.03), darkMat);
+      clawR.position.set(0.3, 0.22, 0);
+      group.add(clawR);
+      group.userData.modelHeight = 0.5;
+      break;
+    }
+    case 'sentinel': {
+      // Heavy tank — wide squat hexagonal base with armored plates
+      const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.18, 6), mat);
+      hull.position.y = 0.18;
+      group.add(hull);
+      const turret = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.1, 6), darkMat);
+      turret.position.y = 0.32;
+      group.add(turret);
+      const plateF = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.12, 0.04), darkMat);
+      plateF.position.set(0, 0.2, 0.24);
+      group.add(plateF);
+      const plateB = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.12, 0.04), darkMat);
+      plateB.position.set(0, 0.2, -0.24);
+      group.add(plateB);
+      group.scale.set(1.1, 1.1, 1.1);
+      group.userData.modelHeight = 0.45;
+      break;
+    }
+    case 'reaver': {
+      // Fast attacker — sleek wedge/blade shape, angled and dangerous-looking
+      const wedge = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.12, 0.18), mat);
+      wedge.position.y = 0.22;
+      wedge.rotation.x = -0.3;
+      group.add(wedge);
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.18, 4), accentMat);
+      nose.position.set(0, 0.22, 0.18);
+      nose.rotation.x = Math.PI / 2;
+      group.add(nose);
+      const finL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.1), darkMat);
+      finL.position.set(-0.16, 0.28, -0.04);
+      finL.rotation.z = 0.3;
+      group.add(finL);
+      const finR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.1), darkMat);
+      finR.position.set(0.16, 0.28, -0.04);
+      finR.rotation.z = -0.3;
+      group.add(finR);
+      group.userData.modelHeight = 0.42;
+      break;
+    }
+    case 'adapter': {
+      // Shape-shifter — intentionally asymmetric mix of sphere, box, and cone
+      const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), mat);
+      sphere.position.y = 0.32;
+      group.add(sphere);
+      const block = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.1, 0.1), darkMat);
+      block.position.set(-0.1, 0.2, 0);
+      group.add(block);
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.16, 5), accentMat);
+      spike.position.set(0.1, 0.44, 0);
+      spike.rotation.z = 0.4;
+      group.add(spike);
+      const stub = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 4), darkMat);
+      stub.position.set(0.08, 0.16, 0.08);
+      stub.rotation.z = -0.5;
+      group.add(stub);
+      const adapterBase = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.1, 8), mat);
+      adapterBase.position.y = 0.05;
+      group.add(adapterBase);
+      group.userData.modelHeight = 0.55;
+      break;
+    }
+    case 'reclaimer': {
+      // Salvage unit — claw top (two angled cones facing each other) grabs things
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.11, 0.26, 8), mat);
+      body.position.y = 0.23;
+      group.add(body);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.1, 6), darkMat);
+      neck.position.y = 0.41;
+      group.add(neck);
+      const clawL = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 5), accentMat);
+      clawL.position.set(-0.07, 0.54, 0);
+      clawL.rotation.z = 0.5;
+      group.add(clawL);
+      const clawR = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 5), accentMat);
+      clawR.position.set(0.07, 0.54, 0);
+      clawR.rotation.z = -0.5;
+      group.add(clawR);
+      const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.14, 4), darkMat);
+      legL.position.set(-0.07, 0.07, 0);
+      group.add(legL);
+      const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.14, 4), darkMat);
+      legR.position.set(0.07, 0.07, 0);
+      group.add(legR);
+      group.userData.modelHeight = 0.62;
+      break;
+    }
+    case 'drone': {
+      // Smallest convergence unit — small sphere body with two thin flat wing boxes; mass-produced look
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), mat);
+      body.position.y = 0.22;
+      group.add(body);
+      const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.06), darkMat);
+      wingL.position.set(-0.12, 0.22, 0);
+      wingL.rotation.z = 0.15;
+      group.add(wingL);
+      const wingR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.06), darkMat);
+      wingR.position.set(0.12, 0.22, 0);
+      wingR.rotation.z = -0.15;
+      group.add(wingR);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 6), accentMat);
+      eye.position.set(0, 0.22, 0.07);
+      group.add(eye);
+      group.scale.set(0.6, 0.6, 0.6);
+      group.userData.modelHeight = 0.3;
+      break;
+    }
+    default: {
+      // Fallback: simple box
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.2), mat);
+      box.position.y = 0.25;
+      group.add(box);
+      group.userData.modelHeight = 0.4;
+    }
+  }
+
+  return group;
+}
+
+function createHPBar() {
+  const group = new THREE.Group();
+  const bgGeo = new THREE.PlaneGeometry(0.5, 0.05);
+  const bgMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthTest: false });
+  const bg = new THREE.Mesh(bgGeo, bgMat);
+  group.add(bg);
+
+  const fillGeo = new THREE.PlaneGeometry(0.5, 0.05);
+  const fillMat = new THREE.MeshBasicMaterial({ color: 0x3fb950, side: THREE.DoubleSide, depthTest: false });
+  const fill = new THREE.Mesh(fillGeo, fillMat);
+  fill.position.z = 0.001;
+  group.add(fill);
+
+  group.userData.fill = fill;
+  group.userData.fillMat = fillMat;
+  group.renderOrder = 999;
+  return group;
+}
+
+function updateHPBar(hpBarGroup, ratio) {
+  const fill = hpBarGroup.userData.fill;
+  const mat = hpBarGroup.userData.fillMat;
+  const r = Math.max(0.01, ratio);
+  fill.scale.x = r;
+  fill.position.x = -(1 - r) * 0.25;
+  if (ratio > 0.6) mat.color.setHex(0x3fb950);
+  else if (ratio > 0.3) mat.color.setHex(0xd29922);
+  else mat.color.setHex(0xf85149);
+}
+
+function setUnitOpacity(group, opacity) {
+  group.traverse(child => {
+    if (child.isMesh) {
+      child.material.opacity = opacity;
+    }
+  });
+}
+
+// ============================================================
+// SCENE SETUP
+// ============================================================
+function initScene() {
+  const canvas = document.getElementById('game-canvas');
+  const container = canvas.parentElement;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x151b25);
+  scene.fog = new THREE.FogExp2(0x151b25, 0.035);
+
+  camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+  camera.position.set(0, 7.5, 6.5);
+  camera.lookAt(0, 0, 0);
+
+  renderer3d = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer3d.setSize(container.clientWidth, container.clientHeight);
+  renderer3d.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer3d.shadowMap.enabled = true;
+  renderer3d.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer3d.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer3d.toneMappingExposure = 1.4;
+
+  // Lights — bright and warm
+  const ambient = new THREE.AmbientLight(0x6070a0, 1.2);
+  scene.add(ambient);
+
+  const dirLight = new THREE.DirectionalLight(0xffeedd, 1.4);
+  dirLight.position.set(5, 12, 5);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 1024;
+  dirLight.shadow.mapSize.height = 1024;
+  dirLight.shadow.camera.near = 0.5;
+  dirLight.shadow.camera.far = 30;
+  dirLight.shadow.camera.left = -8;
+  dirLight.shadow.camera.right = 8;
+  dirLight.shadow.camera.top = 8;
+  dirLight.shadow.camera.bottom = -8;
+  scene.add(dirLight);
+
+  const fillLight = new THREE.DirectionalLight(0x88aaee, 0.6);
+  fillLight.position.set(-4, 6, -3);
+  scene.add(fillLight);
+
+  // Rim/backlight for silhouette definition
+  const rimLight = new THREE.DirectionalLight(0x4488ff, 0.5);
+  rimLight.position.set(-3, 4, 8);
+  scene.add(rimLight);
+
+  // Controls
+  controls = new OrbitControls(camera, canvas);
+  controls.target.set(0, 0, 0);
+  controls.minPolarAngle = 0.3;
+  controls.maxPolarAngle = 1.3;
+  controls.minDistance = 4;
+  controls.maxDistance = 14;
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.update();
+
+  // Board
+  const boardGroup = createBoard();
+  scene.add(boardGroup);
+
+  // Ground plane
+  const groundGeo = new THREE.PlaneGeometry(25, 25);
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x121820, roughness: 0.9 });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -TILE_HEIGHT - 0.01;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // Selection ring
+  const ringGeo = new THREE.TorusGeometry(0.38, 0.025, 8, 32);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 });
+  selectionRing = new THREE.Mesh(ringGeo, ringMat);
+  selectionRing.rotation.x = -Math.PI / 2;
+  selectionRing.position.y = 0.08;
+  selectionRing.visible = false;
+  scene.add(selectionRing);
+
+  clock = new THREE.Clock();
+
+  // Resize
+  const onResize = () => {
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer3d.setSize(w, h);
+  };
+  window.addEventListener('resize', onResize);
+
+  // Input
+  setupInput(canvas);
+
+  sceneReady = true;
+
+  // Start render loop
+  animateLoop();
+}
+
+function animateLoop() {
+  requestAnimationFrame(animateLoop);
+  if (!sceneReady) return;
+  const delta = Math.min(clock.getDelta(), 0.05);
+  updateTweens(delta);
+  updateEffects(delta);
+  updatePulsingEffects(clock.getElapsedTime());
+  updateBillboards();
+  if (selectionRing && selectionRing.visible) {
+    selectionRing.rotation.z += delta * 1.5;
+  }
+  controls.update();
+  camera.position.x += cameraShake.x;
+  camera.position.y += cameraShake.y;
+  renderer3d.render(scene, camera);
+}
+
+function updatePulsingEffects(time) {
+  for (const tile of tileMeshes.values()) {
+    if (tile.userData.highlight === 'attack') {
+      tile.material.emissiveIntensity = 0.3 + Math.sin(time * 5) * 0.2;
+    }
+  }
+}
+
+function updateBillboards() {
+  for (const [, data] of unitMeshes) {
+    if (data.hpBar) {
+      data.hpBar.quaternion.copy(camera.quaternion);
+    }
+  }
+}
+
+// ============================================================
+// RENDERER INTERFACE
+// ============================================================
+const Renderer = {
+  update() {
+    if (!sceneReady) return;
+
+    clearAllHighlights();
+
+    // Move range highlights
+    for (const t of state.moveTargets) {
+      const tile = tileMeshes.get(t.x + ',' + t.y);
+      if (tile) setTileHighlight(tile, t.canAttack ? 'move-attack' : 'move');
+    }
+
+    // Attack target highlights
+    for (const t of state.attackTargets) {
+      const tile = tileMeshes.get(t.pos.x + ',' + t.pos.y);
+      if (tile) setTileHighlight(tile, 'attack');
+    }
+
+    // Enemy intent highlights
+    this._updateIntents();
+
+    // Synergy tile glow
+    for (const u of state.playerUnits) {
+      if (u.hp > 0 && (u.bonusAtk > 0 || u.bonusArmor > 0 || u.bonusMove > 0)) {
+        const tile = tileMeshes.get(u.pos.x + ',' + u.pos.y);
+        if (tile && tile.userData.highlight === 'none') {
+          setTileHighlight(tile, 'synergy');
+        }
+      }
+    }
+
+    // Synergy lights
+    this._updateSynergyLights();
+
+    // Sync unit meshes
+    const allUnits = [
+      ...state.playerUnits.filter(u => u.hp > 0).map(u => ({ unit: u, isPlayer: true })),
+      ...state.enemies.filter(u => u.hp > 0).map(u => ({ unit: u, isPlayer: false }))
+    ];
+    const livingIds = new Set(allUnits.map(o => o.unit.id));
+
+    // Remove dead
+    for (const [id, data] of unitMeshes) {
+      if (!livingIds.has(id)) {
+        scene.remove(data.group);
+        unitMeshes.delete(id);
+      }
+    }
+
+    // Create/update living
+    for (const { unit, isPlayer } of allUnits) {
+      let data = unitMeshes.get(unit.id);
+      if (!data) {
+        const color = isPlayer ? FACTIONS[state.faction].color : (unit.color || '#ff5555');
+        const group = createUnitModel(unit.type, color);
+        const hpBar = createHPBar();
+        const modelH = group.userData.modelHeight || 0.5;
+        hpBar.position.y = modelH + 0.12;
+        group.add(hpBar);
+        scene.add(group);
+        data = { group, hpBar, modelHeight: modelH };
+        unitMeshes.set(unit.id, data);
+      }
+
+      // Position
+      const wp = gridToWorld(unit.pos.x, unit.pos.y);
+      data.group.position.set(wp.x, 0, wp.z);
+
+      // Face direction: player units face right (+x), enemies face left (-x)
+      data.group.rotation.y = isPlayer ? 0 : Math.PI;
+
+      // HP bar
+      updateHPBar(data.hpBar, unit.hp / unit.maxHp);
+
+      // Selection
+      const isSelected = state.selectedUnit === unit;
+      const baseScale = unit.type === 'brute' ? 1.15 : 1;
+      const s = isSelected ? baseScale * 1.06 : baseScale;
+      data.group.scale.set(s, s, s);
+
+      // Acted
+      setUnitOpacity(data.group, unit.acted ? 0.4 : 1);
+    }
+
+    // Selection ring
+    if (state.selectedUnit && state.selectedUnit.hp > 0) {
+      const data = unitMeshes.get(state.selectedUnit.id);
+      if (data) {
+        selectionRing.position.x = data.group.position.x;
+        selectionRing.position.z = data.group.position.z;
+        selectionRing.visible = true;
+        const fc = FACTIONS[state.faction]?.color || '#ffffff';
+        selectionRing.material.color.set(fc);
+      }
+    } else {
+      if (selectionRing) selectionRing.visible = false;
+    }
+  },
+
+  _updateIntents() {
+    // Clear old intent sprites
+    for (const s of intentSprites) scene.remove(s);
+    intentSprites.length = 0;
+    for (const l of intentLines) scene.remove(l);
+    intentLines.length = 0;
+
+    if (state.phase !== 'player_turn') return;
+
+    const damageMap = {};
+    for (const intent of state.enemyIntents) {
+      const enemy = state.enemies.find(e => e.id === intent.unitId);
+      if (!enemy || enemy.hp <= 0) continue;
+      if (intent.targetPos) {
+        const key = intent.targetPos.x + ',' + intent.targetPos.y;
+        damageMap[key] = (damageMap[key] || 0) + intent.damage;
+      }
+      if (intent.movePos) {
+        const tile = tileMeshes.get(intent.movePos.x + ',' + intent.movePos.y);
+        if (tile && tile.userData.highlight === 'none') {
+          setTileHighlight(tile, 'intent-move');
+        }
+      }
+      // Intent line from enemy to target
+      if (intent.targetPos) {
+        const from = gridToWorld(enemy.pos.x, enemy.pos.y);
+        const to = gridToWorld(intent.targetPos.x, intent.targetPos.y);
+        from.y = 0.25;
+        to.y = 0.25;
+        const points = [from, to];
+        const geo = new THREE.BufferGeometry().setFromPoints(points);
+        const mat = new THREE.LineBasicMaterial({ color: 0xff4444, transparent: true, opacity: 0.35 });
+        const line = new THREE.Line(geo, mat);
+        scene.add(line);
+        intentLines.push(line);
+      }
+    }
+
+    // Damage marker sprites
+    for (const [key, dmg] of Object.entries(damageMap)) {
+      const [x, y] = key.split(',').map(Number);
+      const tile = tileMeshes.get(key);
+      if (tile && tile.userData.highlight === 'none') {
+        setTileHighlight(tile, 'intent-target');
+      }
+
+      const pos = gridToWorld(x, y);
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(255,40,40,0.85)';
+      ctx.beginPath();
+      ctx.arc(32, 32, 28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = 'bold 32px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(dmg.toString(), 32, 32);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.position.set(pos.x + 0.32, 0.85, pos.z - 0.32);
+      sprite.scale.set(0.28, 0.28, 1);
+      scene.add(sprite);
+      intentSprites.push(sprite);
+    }
+  },
+
+  _updateSynergyLights() {
+    for (const l of synergyLights) scene.remove(l);
+    synergyLights.length = 0;
+
+    for (const u of state.playerUnits) {
+      if (u.hp > 0 && (u.bonusAtk > 0 || u.bonusArmor > 0 || u.bonusMove > 0)) {
+        const pos = gridToWorld(u.pos.x, u.pos.y);
+        const light = new THREE.PointLight(0xffd700, 1.0, 3.0);
+        light.position.set(pos.x, 0.7, pos.z);
+        scene.add(light);
+        synergyLights.push(light);
+      }
+    }
+  },
+
+  async animateMove(unitId, oldPos, newPos) {
+    const data = unitMeshes.get(unitId);
+    if (!data) return;
+    const from = gridToWorld(oldPos.x, oldPos.y);
+    const to = gridToWorld(newPos.x, newPos.y);
+    const group = data.group;
+    group.position.set(from.x, 0, from.z);
+
+    await tweenCustom(0.35, (t) => {
+      group.position.x = from.x + (to.x - from.x) * t;
+      group.position.z = from.z + (to.z - from.z) * t;
+      group.position.y = Math.sin(t * Math.PI) * 0.25;
+    });
+    group.position.set(to.x, 0, to.z);
+  },
+
+  async animateAttack(attackerId, targetId, damage, killed) {
+    const atkData = unitMeshes.get(attackerId);
+    const defData = unitMeshes.get(targetId);
+    if (!atkData) return;
+
+    const startPos = atkData.group.position.clone();
+    const startScale = atkData.group.scale.clone();
+    let hitPos;
+    if (defData) {
+      hitPos = defData.group.position.clone();
+    } else {
+      const allUnits = [...state.playerUnits, ...state.enemies];
+      const targetUnit = allUnits.find(u => u.id === targetId);
+      hitPos = targetUnit ? gridToWorld(targetUnit.pos.x, targetUnit.pos.y) : startPos.clone();
+    }
+
+    const dir = hitPos.clone().sub(startPos);
+    if (dir.length() > 0) dir.normalize();
+    const pullBack = startPos.clone().add(dir.clone().multiplyScalar(-0.15));
+    const lungeTarget = startPos.clone().add(dir.clone().multiplyScalar(0.55));
+
+    // Phase 1: Wind-up — pull back and scale up
+    await tweenCustom(0.12, (t) => {
+      atkData.group.position.lerpVectors(startPos, pullBack, t);
+      const s = 1 + 0.12 * t;
+      atkData.group.scale.set(startScale.x * s, startScale.y * s, startScale.z * s);
+      atkData.group.rotation.z = -dir.x * 0.1 * t;
+      atkData.group.rotation.x = dir.z * 0.1 * t;
+    }, easeInOutCubic);
+
+    // Phase 2: Strike — fast lunge
+    await tweenCustom(0.07, (t) => {
+      atkData.group.position.lerpVectors(pullBack, lungeTarget, t);
+    }, easeOutExpo);
+
+    // Phase 3: Impact — simultaneous effects
+    const impactPos = hitPos.clone();
+    impactPos.y += 0.3;
+
+    // Camera shake (stronger for kills)
+    shakeCamera(killed ? 0.12 : 0.05, killed ? 0.35 : 0.2);
+
+    // Bright flash at impact
+    spawnImpactFlash(hitPos, killed ? '#ff4422' : '#ffcc44', killed ? 5 : 3);
+
+    // Directional sparks flying away from attacker
+    spawnDirectionalSparks(impactPos, dir, killed ? '#ff6633' : '#ffbb44', killed ? 14 : 8);
+
+    // Rising embers
+    spawnParticles(impactPos, killed ? '#ff3333' : '#ffaa44', killed ? 18 : 10);
+
+    // Damage number
+    spawnDamageText(impactPos, '-' + damage, killed ? '#ff3333' : '#ff5555');
+
+    // Defender reaction
+    if (defData) {
+      flashDefender(defData, 0.25);
+      const defStart = defData.group.position.clone();
+      const recoilTarget = defStart.clone().add(dir.clone().multiplyScalar(0.12));
+      tweenCustom(0.15, (t) => {
+        const recoilT = t < 0.4 ? t / 0.4 : 1 - (t - 0.4) / 0.6;
+        defData.group.position.lerpVectors(defStart, recoilTarget, recoilT);
+      });
+    }
+
+    if (killed) {
+      // Shockwave ring
+      spawnShockwave(hitPos, '#ff4422');
+      // Extra particle explosions
+      spawnParticles(impactPos.clone().add(new THREE.Vector3(0, 0.2, 0)), '#ffaa00', 12);
+      spawnParticles(impactPos, '#ff0000', 14);
+      // White sparks
+      spawnDirectionalSparks(impactPos, new THREE.Vector3(0, 1, 0), '#ffffff', 8);
+      // Flash tile
+      const targetUnit = [...state.playerUnits, ...state.enemies].find(u => u.id === targetId);
+      if (targetUnit) {
+        const tile = tileMeshes.get(targetUnit.pos.x + ',' + targetUnit.pos.y);
+        if (tile) {
+          tile.material.emissive.setHex(0xff3333);
+          tile.material.emissiveIntensity = 1.0;
+          setTimeout(() => {
+            if (tile.userData.highlight === 'none') {
+              tile.material.emissive.setHex(0x000000);
+              tile.material.emissiveIntensity = 0;
+            }
+          }, 500);
+        }
+      }
+    }
+
+    // Brief impact pause for weight
+    await sleep(killed ? 80 : 40);
+
+    // Phase 4: Return — slide back, reset scale and rotation
+    await tweenCustom(0.15, (t) => {
+      atkData.group.position.lerpVectors(lungeTarget, startPos, t);
+      const s = 1 + 0.12 * (1 - t);
+      atkData.group.scale.set(startScale.x * s, startScale.y * s, startScale.z * s);
+      atkData.group.rotation.z = -dir.x * 0.1 * (1 - t);
+      atkData.group.rotation.x = dir.z * 0.1 * (1 - t);
+    }, easeOutBack);
+
+    atkData.group.position.copy(startPos);
+    atkData.group.scale.copy(startScale);
+    atkData.group.rotation.set(0, 0, 0);
+  },
+
+  showDamagePopup(x, y, amount, color) {
+    if (!sceneReady) return;
+    const pos = gridToWorld(x, y);
+    pos.y += 0.3;
+    spawnDamageText(pos, '-' + amount, color);
+  },
+
+  showKillFlash(x, y) {
+    if (!sceneReady) return;
+    const pos = gridToWorld(x, y);
+    pos.y += 0.3;
+    spawnParticles(pos, '#ff3333', 12);
+
+    const tile = tileMeshes.get(x + ',' + y);
+    if (tile) {
+      tile.material.emissive.setHex(0xff3333);
+      tile.material.emissiveIntensity = 0.8;
+      setTimeout(() => {
+        if (tile.userData.highlight === 'none') {
+          tile.material.emissive.setHex(0x000000);
+          tile.material.emissiveIntensity = 0;
+        }
+      }, 400);
+    }
+  },
+
+  reset() {
+    // Clear all unit meshes
+    for (const [, data] of unitMeshes) {
+      scene.remove(data.group);
+    }
+    unitMeshes.clear();
+    for (const s of intentSprites) scene.remove(s);
+    intentSprites.length = 0;
+    for (const l of intentLines) scene.remove(l);
+    intentLines.length = 0;
+    for (const l of synergyLights) scene.remove(l);
+    synergyLights.length = 0;
+    clearAllHighlights();
+    if (selectionRing) selectionRing.visible = false;
+  }
+};
+
+// ============================================================
+// INPUT
+// ============================================================
+function setupInput(canvas) {
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  let mouseDownPos = null;
+  const tileArray = Array.from(tileMeshes.values());
+
+  canvas.addEventListener('pointerdown', (e) => {
+    mouseDownPos = { x: e.clientX, y: e.clientY };
+  });
+
+  canvas.addEventListener('pointerup', (e) => {
+    if (!mouseDownPos) return;
+    const dx = e.clientX - mouseDownPos.x;
+    const dy = e.clientY - mouseDownPos.y;
+    mouseDownPos = null;
+    if (Math.sqrt(dx * dx + dy * dy) > 5) return;
+
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObjects(tileArray);
+    if (intersects.length > 0) {
+      const tile = intersects[0].object;
+      onCellClick(tile.userData.gridX, tile.userData.gridY);
+    }
+  });
+
+  // Hover
+  canvas.addEventListener('pointermove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObjects(tileArray);
+    if (intersects.length > 0) {
+      const tile = intersects[0].object;
+      const gx = tile.userData.gridX;
+      const gy = tile.userData.gridY;
+
+      // Cursor style
+      if (state.phase === 'player_turn' && !animating) {
+        const isMoveTile = state.moveTargets.some(t => t.x === gx && t.y === gy);
+        const isAttackTarget = state.attackTargets.some(t => t.pos.x === gx && t.pos.y === gy);
+        const hasPlayer = state.playerUnits.find(u => u.hp > 0 && !u.acted && u.pos.x === gx && u.pos.y === gy);
+        if (isAttackTarget) canvas.style.cursor = 'crosshair';
+        else if (isMoveTile || hasPlayer) canvas.style.cursor = 'pointer';
+        else canvas.style.cursor = 'default';
+      } else {
+        canvas.style.cursor = 'default';
+      }
+    } else {
+      canvas.style.cursor = 'default';
+    }
+  });
+}
+
+// ============================================================
+// ARMY BUILDER
+// ============================================================
+const armyBuilderState = {
+  faction: null,
+  pointLevel: 100,
+  selectedUnits: [],
+};
+
+function renderFactionCards() {
+  const container = document.getElementById('faction-cards-container');
+  container.innerHTML = '';
+  for (const [id, f] of Object.entries(FACTIONS)) {
+    const card = document.createElement('div');
+    card.className = `faction-card faction-${id}`;
+    card.onclick = () => window._openArmyBuilder(id);
+    const synPreview = f.synergies[0];
+    card.innerHTML = `
+      <h2>${f.name}</h2>
+      <p class="playstyle">${f.playstyle}</p>
+      <p class="desc">${f.desc}</p>
+      <p class="units">${f.roster.map(u => u.name).join(', ')}</p>
+      <div class="synergy-preview">Synergy: ${synPreview.name} &mdash; ${synPreview.desc}</div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+function showArmyBuilder(factionId) {
+  armyBuilderState.faction = factionId;
+  armyBuilderState.selectedUnits = [];
+  const f = FACTIONS[factionId];
+  document.getElementById('army-builder-title').textContent = f.name;
+  document.getElementById('army-builder-title').style.color = f.color;
+  document.getElementById('army-total').textContent = armyBuilderState.pointLevel;
+  showScreen('army-builder');
+  renderArmyBuilder();
+}
+
+function getPointsSpent() {
+  return armyBuilderState.selectedUnits.reduce((s, u) => s + u.cost, 0);
+}
+
+function validateArmy() {
+  const errors = [];
+  const units = armyBuilderState.selectedUnits;
+  const spent = getPointsSpent();
+  const budget = armyBuilderState.pointLevel;
+  if (units.length < 2) errors.push('Need at least 2 units');
+  if (units.length > 5) errors.push('Maximum 5 units');
+  if (spent > budget) errors.push(`Over budget by ${spent - budget} points`);
+  if (spent < budget * 0.8 && units.length >= 2) errors.push(`Must spend at least ${Math.ceil(budget * 0.8)} points`);
+  return { valid: errors.length === 0, errors };
+}
+
+function canAddUnit(rosterEntry) {
+  const units = armyBuilderState.selectedUnits;
+  const spent = getPointsSpent();
+  if (units.length >= 5) return false;
+  if (spent + rosterEntry.cost > armyBuilderState.pointLevel) return false;
+  if (rosterEntry.isLeader && units.some(u => u.isLeader)) return false;
+  const sameTypeCount = units.filter(u => u.type === rosterEntry.type).length;
+  if (rosterEntry.isLeader && sameTypeCount >= 1) return false;
+  if (!rosterEntry.isLeader && sameTypeCount >= 2) return false;
+  return true;
+}
+
+function addUnitToArmy(rosterIndex) {
+  const f = FACTIONS[armyBuilderState.faction];
+  const entry = f.roster[rosterIndex];
+  if (!canAddUnit(entry)) return;
+  armyBuilderState.selectedUnits.push({ ...entry });
+  renderArmyBuilder();
+}
+
+function removeUnitFromArmy(armyIndex) {
+  armyBuilderState.selectedUnits.splice(armyIndex, 1);
+  renderArmyBuilder();
+}
+
+function renderArmyBuilder() {
+  const f = FACTIONS[armyBuilderState.faction];
+  const spent = getPointsSpent();
+  const budget = armyBuilderState.pointLevel;
+  const remaining = budget - spent;
+
+  // Budget display
+  const budgetEl = document.getElementById('army-budget');
+  document.getElementById('army-spent').textContent = spent;
+  document.getElementById('army-total').textContent = budget;
+  document.getElementById('army-remaining').textContent = `${remaining} remaining`;
+  budgetEl.className = 'army-budget' + (spent > budget ? ' over' : '');
+
+  // Roster cards
+  const rosterList = document.getElementById('roster-list');
+  rosterList.innerHTML = '';
+  f.roster.forEach((entry, i) => {
+    const disabled = !canAddUnit(entry);
+    const card = document.createElement('div');
+    card.className = 'roster-card' + (disabled ? ' disabled' : '');
+    card.style.borderColor = disabled ? '' : f.color + '40';
+    if (!disabled) card.onclick = () => addUnitToArmy(i);
+    const leaderTag = entry.isLeader ? ' <span style="color:#ffd700;font-size:10px;">LEADER</span>' : '';
+    card.innerHTML = `
+      <div class="unit-icon">${entry.icon}</div>
+      <div class="unit-info">
+        <div class="unit-name" style="color:${f.color}">${entry.name}${leaderTag}</div>
+        <div class="unit-desc">${entry.desc}</div>
+        <div class="unit-stats">HP:${entry.hp} ATK:${entry.atk} ARM:${entry.armor} MOV:${entry.move} RNG:${entry.range}</div>
+      </div>
+      <div class="unit-cost">${entry.cost}</div>
+    `;
+    rosterList.appendChild(card);
+  });
+
+  // Army slots
+  const slotsEl = document.getElementById('army-slots');
+  slotsEl.innerHTML = '';
+  armyBuilderState.selectedUnits.forEach((u, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'army-slot';
+    slot.innerHTML = `
+      <div class="unit-icon">${u.icon}</div>
+      <div class="slot-info">
+        <div class="slot-name" style="color:${f.color}">${u.name}</div>
+      </div>
+      <div class="slot-cost">${u.cost}pts</div>
+      <button class="remove-btn" onclick="window._removeFromArmy(${i})">&times;</button>
+    `;
+    slotsEl.appendChild(slot);
+  });
+  // Empty slot placeholders
+  for (let i = armyBuilderState.selectedUnits.length; i < 5; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'army-empty-slot';
+    empty.textContent = i < 2 ? 'Required' : 'Optional';
+    slotsEl.appendChild(empty);
+  }
+
+  // Validation
+  const { valid, errors } = validateArmy();
+  document.getElementById('army-errors').textContent = errors.join(' \u2022 ');
+  document.getElementById('btn-start-battle').disabled = !valid;
+}
+
+function confirmArmy() {
+  const { valid } = validateArmy();
+  if (!valid) return;
+  startGame(armyBuilderState.faction, armyBuilderState.selectedUnits);
+}
+
+// ============================================================
+// GAME FLOW
+// ============================================================
+function startGame(factionId, selectedUnits) {
+  initState(factionId, selectedUnits);
+  showScreen('game-screen');
+  if (!sceneReady) initScene();
+  Renderer.reset();
+  startWave(0);
+}
+
+function startWave(waveIdx) {
+  state.wave = waveIdx;
+  state.turn = 0;
+  const wave = WAVES[waveIdx];
+  state.enemies = wave.enemies.map((e, i) => ({
+    ...e,
+    id: 'e' + waveIdx + '_' + i,
+    maxHp: e.hp,
+    bonusAtk: 0,
+    bonusArmor: 0,
+    pos: { ...wave.positions[i] }
+  }));
+  showOverlay(wave.label, `${wave.enemies.length} enemies approaching`, () => {
+    startPlayerTurn();
+  });
+}
+
+async function startPlayerTurn() {
+  state.phase = 'player_turn';
+  state.turn++;
+  state.totalTurns++;
+  state.playerUnits.forEach(u => { u.acted = false; u.bonusAtk = 0; u.bonusArmor = 0; u.bonusMove = 0; });
+  await doPassiveHealing();
+  calculateSynergies();
+  calculateEnemyIntents();
+  deselectUnit();
+  render();
+}
+
+async function endTurn() {
+  deselectUnit();
+  state.phase = 'enemy_turn';
+  document.getElementById('btn-end-turn').disabled = true;
+  document.getElementById('btn-skip').disabled = true;
+  render();
+  await executeEnemyIntents();
+  if (checkGameOver()) return;
+  await doProliferate();
+  if (state.enemies.filter(e => e.hp > 0).length === 0) {
+    onWaveComplete();
+  } else {
+    await startPlayerTurn();
+  }
+}
+
+function onWaveComplete() {
+  state.score += 50;
+  if (state.wave < WAVES.length - 1) {
+    showDraft(() => {
+      startWave(state.wave + 1);
+    });
+  } else {
+    showGameOver(true);
+  }
+}
+
+function checkGameOver() {
+  if (state.playerUnits.filter(u => u.hp > 0).length === 0) {
+    showGameOver(false);
+    return true;
+  }
+  return false;
+}
+
+function showGameOver(won) {
+  state.gameOver = true;
+  const hpBonus = state.playerUnits.reduce((s, u) => s + Math.max(0, u.hp), 0) * 5;
+  const efficiencyBonus = Math.max(0, 20 - state.totalTurns) * 10;
+  const synergyBonus = state.synergiesActivated * 8;
+  const killBonus = state.cleanKills * 15;
+  const total = state.score + hpBonus + efficiencyBonus + synergyBonus + killBonus;
+
+  document.getElementById('game-over-title').textContent = won ? 'VICTORY' : 'DEFEATED';
+  document.getElementById('game-over-title').style.color = won ? '#ffd700' : '#ff5555';
+  document.getElementById('final-score').textContent = total;
+
+  const bd = document.getElementById('score-breakdown');
+  bd.innerHTML = [
+    ['Waves Cleared', `${state.score}`],
+    ['Surviving HP', `+${hpBonus}`],
+    ['Efficiency (' + state.totalTurns + ' turns)', `+${efficiencyBonus}`],
+    ['Synergy Activations (' + state.synergiesActivated + ')', `+${synergyBonus}`],
+    ['Clean Kills (' + state.cleanKills + ')', `+${killBonus}`],
+  ].map(([l, v]) => `<div class="score-row"><span class="label">${l}</span><span class="value">${v}</span></div>`).join('');
+
+  showScreen('game-over');
+}
+
+// ============================================================
+// UNIT SELECTION & ACTIONS
+// ============================================================
+function selectUnit(unit) {
+  if (unit.acted || unit.hp <= 0) return;
+  state.selectedUnit = unit;
+  state.selectedPhase = 'move';
+  state.moveTargets = getMoveTiles(unit);
+  state.attackTargets = [];
+  document.getElementById('btn-skip').disabled = false;
+  render();
+}
+
+function deselectUnit() {
+  state.selectedUnit = null;
+  state.selectedPhase = null;
+  state.moveTargets = [];
+  state.attackTargets = [];
+  document.getElementById('btn-skip').disabled = true;
+  render();
+}
+
+function skipUnit() {
+  if (!state.selectedUnit) return;
+  state.selectedUnit.acted = true;
+  deselectUnit();
+  checkAllActed();
+}
+
+function getMoveTiles(unit) {
+  const tiles = [];
+  const enemies = state.enemies.filter(e => e.hp > 0);
+  const totalMove = unit.move + (unit.bonusMove || 0);
+  for (let x = 0; x < COLS; x++) {
+    for (let y = 0; y < ROWS; y++) {
+      if (x === unit.pos.x && y === unit.pos.y) continue;
+      if (manhattan(unit.pos, {x, y}) > totalMove) continue;
+      if (getUnitAt(x, y)) continue;
+      const canAttack = enemies.some(e => manhattan({x, y}, e.pos) <= unit.range);
+      tiles.push({x, y, canAttack});
+    }
+  }
+  return tiles;
+}
+
+function getAttackTargets(unit) {
+  return state.enemies.filter(e =>
+    e.hp > 0 && manhattan(unit.pos, e.pos) <= unit.range
+  );
+}
+
+async function moveUnit(unit, x, y) {
+  animating = true;
+  const oldPos = { ...unit.pos };
+  unit.pos = {x, y};
+  await Renderer.animateMove(unit.id, oldPos, unit.pos);
+  animating = false;
+
+  state.selectedPhase = 'attack';
+  state.moveTargets = [];
+  calculateSynergies();
+  state.attackTargets = getAttackTargets(unit);
+  if (state.attackTargets.length === 0) {
+    unit.acted = true;
+    deselectUnit();
+    checkAllActed();
+  } else if (state.attackTargets.length === 1) {
+    render();
+    await attackTarget(unit, state.attackTargets[0]);
+  } else {
+    render();
+    showPrompt('Multiple targets \u2014 click an enemy to attack');
+  }
+}
+
+async function attackTarget(attacker, target) {
+  animating = true;
+  const coordBonus = getCoordinatedFireBonus(attacker, target);
+  const netReduction = getNetworkedTargetingBonus(target);
+  const totalAtk = attacker.atk + attacker.bonusAtk + coordBonus;
+  const totalArmor = Math.max(0, target.armor + (target.bonusArmor || 0) - netReduction);
+  const dmg = Math.max(1, totalAtk - totalArmor);
+  target.hp = Math.max(0, target.hp - dmg);
+  state.damageDealt += dmg;
+
+  await Renderer.animateAttack(attacker.id, target.id, dmg, target.hp <= 0);
+  animating = false;
+
+  if (target.hp <= 0) {
+    const hadIntent = state.enemyIntents.find(i => i.unitId === target.id && i.targetId);
+    if (hadIntent) state.cleanKills++;
+    state.score += 10;
+    // Vanguard: on-kill salvage
+    if (attacker.faction === 'vanguard') applySalvage(attacker);
+  }
+
+  // Convergence Adapter: gain +1 to cycling stat on hit
+  if (attacker.type === 'adapter') {
+    applyStatCycle(attacker, 'adapterCycle', 1);
+  }
+
+  attacker.acted = true;
+  deselectUnit();
+  checkAllActed();
+}
+
+function checkAllActed() {
+  const canAct = state.playerUnits.filter(u => u.hp > 0 && !u.acted);
+  if (canAct.length === 0) {
+    setTimeout(() => endTurn(), 300);
+  }
+}
+
+function getUnitAt(x, y) {
+  return state.playerUnits.find(u => u.hp > 0 && u.pos.x === x && u.pos.y === y)
+    || state.enemies.find(u => u.hp > 0 && u.pos.x === x && u.pos.y === y);
+}
+
+// ============================================================
+// FACTION MECHANICS
+// ============================================================
+
+// Shared stat-cycling: ATK → Armor → Move
+function applyStatCycle(unit, cycleField, amount) {
+  const cycle = (unit[cycleField] || 0) % 3;
+  if (cycle === 0) unit.atk += amount;
+  else if (cycle === 1) unit.armor += amount;
+  else unit.move += amount;
+  unit[cycleField] = (unit[cycleField] || 0) + 1;
+}
+
+// Vanguard: on-kill cycling stat buff (ATK → Armor → Move)
+function applySalvage(unit) {
+  const amount = unit.type === 'engineer' ? 2 : 1;
+  applyStatCycle(unit, 'salvageCycle', amount);
+  unit.salvageTokens += 1;
+}
+
+// Vanguard: +1 damage when 2+ allies can reach the same target
+function getCoordinatedFireBonus(attacker, target) {
+  if (attacker.faction !== 'vanguard') return 0;
+  const others = state.playerUnits.filter(u =>
+    u.hp > 0 && u !== attacker && u.faction === 'vanguard' &&
+    manhattan(u.pos, target.pos) <= u.range
+  );
+  return others.length >= 1 ? 1 : 0;
+}
+
+// Convergence: drones adjacent to target reduce its effective armor
+function getNetworkedTargetingBonus(target) {
+  const drones = state.playerUnits.filter(u =>
+    u.hp > 0 && u.isDrone && manhattan(u.pos, target.pos) === 1
+  );
+  return drones.length;
+}
+
+// Convergence: eligible units spawn drones at end of enemy turn
+const DRONE_TEMPLATE = { name: 'Drone', icon: '\u2B21', hp: 2, atk: 1, armor: 0, move: 2, range: 1, type: 'drone', isDrone: true, isLeader: false, desc: 'Disposable nanite drone' };
+const PROLIFERATE_CAP = 8;
+
+async function doProliferate() {
+  if (state.faction !== 'convergence') return;
+  const totalUnits = state.playerUnits.filter(u => u.hp > 0).length;
+  if (totalUnits >= PROLIFERATE_CAP) return;
+
+  const spawners = state.playerUnits.filter(u =>
+    u.hp > 0 && u.canProliferate &&
+    !state.enemies.some(e => e.hp > 0 && manhattan(u.pos, e.pos) === 1)
+  );
+
+  let spawned = 0;
+  for (const unit of spawners) {
+    const count = unit.proliferateCount || 1;
+    for (let i = 0; i < count; i++) {
+      if (state.playerUnits.filter(u => u.hp > 0).length >= PROLIFERATE_CAP) break;
+      const drone = spawnDrone(unit);
+      if (drone) spawned++;
+    }
+  }
+  if (spawned > 0) {
+    calculateSynergies();
+    render();
+    await sleep(300);
+  }
+}
+
+let _droneIdCounter = 0;
+function spawnDrone(nearUnit) {
+  const dirs = [{x:0,y:1},{x:0,y:-1},{x:1,y:0},{x:-1,y:0}];
+  const shuffled = dirs.sort(() => Math.random() - 0.5);
+  for (const d of shuffled) {
+    const nx = nearUnit.pos.x + d.x;
+    const ny = nearUnit.pos.y + d.y;
+    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+    if (getUnitAt(nx, ny)) continue;
+    const drone = {
+      ...DRONE_TEMPLATE,
+      id: 'drone_' + (++_droneIdCounter),
+      maxHp: DRONE_TEMPLATE.hp,
+      pos: { x: nx, y: ny },
+      faction: 'convergence',
+      acted: true,
+      bonusAtk: 0, bonusArmor: 0, bonusMove: 0,
+      salvageTokens: 0, salvageCycle: 0,
+      canProliferate: false, proliferateCount: 0,
+      isDrone: true,
+    };
+    state.playerUnits.push(drone);
+    return drone;
+  }
+  return null;
+}
+
+// Start-of-turn passives: Medic heals, Reclaimer consumes drone
+async function doPassiveHealing() {
+  let healed = false;
+
+  // Vanguard Medic: heal adjacent allies 2 HP
+  if (state.faction === 'vanguard') {
+    const medics = state.playerUnits.filter(u => u.hp > 0 && u.type === 'medic');
+    for (const medic of medics) {
+      const adj = state.playerUnits.filter(u =>
+        u.hp > 0 && u !== medic && manhattan(u.pos, medic.pos) === 1 && u.hp < u.maxHp
+      );
+      for (const ally of adj) {
+        ally.hp = Math.min(ally.maxHp, ally.hp + 2);
+        healed = true;
+      }
+    }
+  }
+
+  // Convergence Reclaimer: consume adjacent drone, heal self 3 HP
+  if (state.faction === 'convergence') {
+    const reclaimers = state.playerUnits.filter(u => u.hp > 0 && u.type === 'reclaimer');
+    for (const rec of reclaimers) {
+      if (rec.hp >= rec.maxHp) continue;
+      const drone = state.playerUnits.find(u =>
+        u.hp > 0 && u.isDrone && manhattan(u.pos, rec.pos) === 1
+      );
+      if (drone) {
+        drone.hp = 0;
+        rec.hp = Math.min(rec.maxHp, rec.hp + 3);
+        healed = true;
+      }
+    }
+  }
+
+  if (healed) {
+    render();
+    await sleep(300);
+  }
+}
+
+// ============================================================
+// SYNERGIES
+// ============================================================
+let _lastSynergyTurn = -1;
+
+// Synergy context — lets faction synergy functions access game state
+// without importing it directly
+function synergyCtx() {
+  return {
+    manhattan,
+    enemies: () => state.enemies,
+    playerUnits: () => state.playerUnits,
+  };
+}
+
+function calculateSynergies() {
+  const f = FACTIONS[state.faction];
+  const ctx = synergyCtx();
+  state.activeSynergies = [];
+  state.playerUnits.forEach(u => { u.bonusAtk = 0; u.bonusArmor = 0; u.bonusMove = 0; });
+  for (const syn of f.synergies) {
+    if (syn.check(state.playerUnits, ctx)) {
+      state.activeSynergies.push(syn.id);
+      syn.apply(state.playerUnits, ctx);
+      if (_lastSynergyTurn !== state.totalTurns) {
+        state.synergiesActivated++;
+      }
+    }
+  }
+  if (state.activeSynergies.length > 0) {
+    _lastSynergyTurn = state.totalTurns;
+  }
+}
+
+// ============================================================
+// ENEMY AI
+// ============================================================
+const ENEMY_STRATEGIES = ['aggressive', 'focusFire', 'preemptive', 'synergyHunter'];
+
+function pickEnemyStrategy() {
+  return ENEMY_STRATEGIES[Math.floor(Math.random() * ENEMY_STRATEGIES.length)];
+}
+
+function selectTarget(enemy, strategy) {
+  const targets = state.playerUnits.filter(u => u.hp > 0);
+  if (targets.length === 0) return null;
+
+  switch (strategy) {
+    case 'focusFire':
+      // Everyone piles on the lowest-HP player unit
+      return targets.reduce((best, t) => t.hp < best.hp ? t : best);
+
+    case 'preemptive':
+      // Target the highest-damage player unit
+      return targets.reduce((best, t) => {
+        const tDmg = t.atk + t.bonusAtk;
+        const bDmg = best.atk + best.bonusAtk;
+        return tDmg > bDmg ? t : best;
+      });
+
+    case 'synergyHunter':
+      // Target units granting synergy bonuses (key units first)
+      return targets.reduce((best, t) => {
+        const tSyn = (t.bonusAtk > 0 || t.bonusArmor > 0) ? 1 : 0;
+        const bSyn = (best.bonusAtk > 0 || best.bonusArmor > 0) ? 1 : 0;
+        if (tSyn !== bSyn) return tSyn > bSyn ? t : best;
+        return t.hp < best.hp ? t : best;
+      });
+
+    case 'aggressive':
+    default:
+      // Target nearest player unit (original behavior)
+      return targets.reduce((best, t) => {
+        const d = manhattan(enemy.pos, t.pos);
+        const bestD = manhattan(enemy.pos, best.pos);
+        return d < bestD ? t : best;
+      });
+  }
+}
+
+function calculateEnemyIntents() {
+  state.enemyIntents = [];
+  for (const enemy of state.enemies.filter(e => e.hp > 0)) {
+    const intent = planEnemyAction(enemy);
+    if (intent) state.enemyIntents.push(intent);
+  }
+}
+
+function planEnemyAction(enemy) {
+  const target = selectTarget(enemy, state.enemyStrategy);
+  if (!target) return null;
+
+  const dist = manhattan(enemy.pos, target.pos);
+  const effectiveRange = enemy.range >= 2 ? enemy.range : 1;
+
+  if (dist <= effectiveRange) {
+    const dmg = Math.max(1, enemy.atk - (target.armor + target.bonusArmor));
+    return { unitId: enemy.id, type: 'attack', targetId: target.id, targetPos: {...target.pos}, movePos: null, damage: dmg };
+  }
+
+  const movePos = stepToward(enemy.pos, target.pos, enemy.move, enemy);
+  const newDist = manhattan(movePos, target.pos);
+  if (newDist <= effectiveRange) {
+    const dmg = Math.max(1, enemy.atk - (target.armor + target.bonusArmor));
+    return { unitId: enemy.id, type: 'move_attack', movePos, targetId: target.id, targetPos: {...target.pos}, damage: dmg };
+  }
+  return { unitId: enemy.id, type: 'move', movePos, targetId: null, targetPos: null, damage: 0 };
+}
+
+function stepToward(from, to, steps, self) {
+  let cur = {...from};
+  for (let i = 0; i < steps; i++) {
+    const dx = Math.sign(to.x - cur.x);
+    const dy = Math.sign(to.y - cur.y);
+    const candidates = [];
+    if (dx !== 0) candidates.push({x: cur.x + dx, y: cur.y});
+    if (dy !== 0) candidates.push({x: cur.x, y: cur.y + dy});
+    let moved = false;
+    for (const c of candidates) {
+      if (c.x >= 0 && c.x < COLS && c.y >= 0 && c.y < ROWS && !getOtherUnitAt(c.x, c.y, self)) {
+        cur = c;
+        moved = true;
+        break;
+      }
+    }
+    if (!moved) break;
+  }
+  return cur;
+}
+
+function getOtherUnitAt(x, y, excludeUnit) {
+  const all = [...state.playerUnits, ...state.enemies];
+  return all.find(u => u.hp > 0 && u !== excludeUnit && u.pos.x === x && u.pos.y === y);
+}
+
+async function executeEnemyIntents() {
+  const intents = [...state.enemyIntents];
+  for (const intent of intents) {
+    const enemy = state.enemies.find(e => e.id === intent.unitId);
+    if (!enemy || enemy.hp <= 0) continue;
+
+    // Movement
+    if (intent.movePos) {
+      const blocker = getUnitAt(intent.movePos.x, intent.movePos.y);
+      let targetPos;
+      if (blocker && blocker !== enemy) {
+        targetPos = stepToward(enemy.pos, intent.movePos, enemy.move, enemy);
+      } else {
+        targetPos = intent.movePos;
+      }
+      const oldPos = { ...enemy.pos };
+      enemy.pos = targetPos;
+      animating = true;
+      await Renderer.animateMove(enemy.id, oldPos, enemy.pos);
+      animating = false;
+    }
+
+    // Attack
+    if (intent.targetId) {
+      const target = state.playerUnits.find(u => u.id === intent.targetId);
+      if (target && target.hp > 0 && manhattan(enemy.pos, target.pos) <= enemy.range) {
+        const totalArmor = target.armor + target.bonusArmor;
+        const dmg = Math.max(1, enemy.atk - totalArmor);
+        target.hp = Math.max(0, target.hp - dmg);
+        state.damageTaken += dmg;
+        animating = true;
+        await Renderer.animateAttack(enemy.id, target.id, dmg, target.hp <= 0);
+        animating = false;
+      }
+    }
+
+    render();
+    await sleep(120);
+  }
+  state.enemies = state.enemies.filter(e => e.hp > 0);
+}
+
+// ============================================================
+// DRAFT
+// ============================================================
+function showDraft(callback) {
+  const options = shuffle([...DRAFT_POOL]).slice(0, 3);
+  const overlay = createOverlay('draft-overlay');
+  overlay.innerHTML = `
+    <h2>Choose an Upgrade</h2>
+    <div class="draft-cards">
+      ${options.map((o, i) => `
+        <div class="draft-card" data-idx="${i}">
+          <div class="draft-icon">${o.icon}</div>
+          <div class="draft-name">${o.name}</div>
+          <div class="draft-desc">${o.desc}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelectorAll('.draft-card').forEach((card, i) => {
+    card.addEventListener('click', () => {
+      options[i].apply(state);
+      state.score += 5;
+      overlay.remove();
+      callback();
+    });
+  });
+}
+
+// ============================================================
+// UI RENDERING
+// ============================================================
+function render() {
+  Renderer.update();
+  renderUnitDetail();
+  renderSynergies();
+  document.getElementById('wave-num').textContent = state.wave + 1;
+  document.getElementById('score-num').textContent = state.score;
+  document.getElementById('turn-info').textContent =
+    state.phase === 'player_turn' ? `Turn ${state.turn} \u2014 Your Move` : 'Enemy Turn\u2026';
+  document.getElementById('btn-end-turn').disabled = state.phase !== 'player_turn';
+}
+
+function renderUnitDetail() {
+  const el = document.getElementById('unit-detail');
+  const unit = state.selectedUnit;
+  if (!unit) {
+    el.innerHTML = '<div style="color:#7d8590;font-size:13px;">Click a unit to select</div>';
+    return;
+  }
+  const isPlayer = state.playerUnits.includes(unit);
+  const color = isPlayer ? FACTIONS[state.faction].color : (unit.color || '#ff5555');
+  const totalAtk = unit.atk + (unit.bonusAtk || 0);
+  const totalArmor = unit.armor + (unit.bonusArmor || 0);
+  const totalMove = unit.move + (unit.bonusMove || 0);
+  const atkBonus = unit.bonusAtk ? ` <span class="stat-bonus">(+${unit.bonusAtk})</span>` : '';
+  const armorBonus = unit.bonusArmor ? ` <span class="stat-bonus">(+${unit.bonusArmor})</span>` : '';
+  const moveBonus = unit.bonusMove ? ` <span class="stat-bonus">(+${unit.bonusMove})</span>` : '';
+  const salvageLine = (unit.salvageTokens > 0) ? `<div class="stat-row"><span class="stat-label">Salvage</span><span class="stat-value" style="color:#ffd700">${unit.salvageTokens}</span></div>` : '';
+  const droneLine = unit.isDrone ? `<div class="stat-row"><span class="stat-label">Type</span><span class="stat-value" style="color:#56d4c0">Drone</span></div>` : '';
+
+  el.innerHTML = `
+    <div class="unit-name" style="color:${color}">${unit.icon} ${unit.name}</div>
+    <div class="unit-type">${isPlayer ? FACTIONS[state.faction].name : 'Enemy'}</div>
+    <div class="stat-row"><span class="stat-label">HP</span><span class="stat-value">${unit.hp} / ${unit.maxHp}</span></div>
+    <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-value">${totalAtk}${atkBonus}</span></div>
+    <div class="stat-row"><span class="stat-label">Armor</span><span class="stat-value">${totalArmor}${armorBonus}</span></div>
+    <div class="stat-row"><span class="stat-label">Move</span><span class="stat-value">${totalMove}${moveBonus}</span></div>
+    <div class="stat-row"><span class="stat-label">Range</span><span class="stat-value">${unit.range}</span></div>
+    ${salvageLine}${droneLine}
+  `;
+}
+
+function renderSynergies() {
+  const el = document.getElementById('synergy-list');
+  const f = FACTIONS[state.faction];
+  el.innerHTML = f.synergies.map(s => {
+    const active = state.activeSynergies.includes(s.id);
+    return `<div class="synergy-item ${active ? 'active' : ''}">
+      <div class="synergy-name">${active ? '\u2605 ' : '\u2606 '}${s.name}</div>
+      <div>${s.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+function hpColor(ratio) {
+  if (ratio > 0.6) return '#3fb950';
+  if (ratio > 0.3) return '#d29922';
+  return '#f85149';
+}
+
+function showDamagePopup(x, y, amount, color) {
+  Renderer.showDamagePopup(x, y, amount, color);
+}
+
+function showKillFlash(x, y) {
+  Renderer.showKillFlash(x, y);
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+function onCellClick(x, y) {
+  if (state.phase !== 'player_turn' || state.gameOver || animating) return;
+
+  const clickedPlayer = state.playerUnits.find(u => u.hp > 0 && u.pos.x === x && u.pos.y === y);
+  const clickedEnemy = state.enemies.find(u => u.hp > 0 && u.pos.x === x && u.pos.y === y);
+
+  // Move phase: click valid move tile
+  if (state.selectedPhase === 'move' && state.moveTargets.some(t => t.x === x && t.y === y)) {
+    moveUnit(state.selectedUnit, x, y);
+    return;
+  }
+
+  // Attack phase: click valid attack target
+  if (state.selectedPhase === 'attack' && clickedEnemy && state.attackTargets.includes(clickedEnemy)) {
+    attackTarget(state.selectedUnit, clickedEnemy);
+    return;
+  }
+
+  // Click selected unit in move phase = skip to attack
+  if (state.selectedPhase === 'move' && clickedPlayer === state.selectedUnit) {
+    state.selectedPhase = 'attack';
+    state.moveTargets = [];
+    state.attackTargets = getAttackTargets(state.selectedUnit);
+    if (state.attackTargets.length === 0) {
+      state.selectedUnit.acted = true;
+      deselectUnit();
+      checkAllActed();
+    } else if (state.attackTargets.length === 1) {
+      render();
+      const unit = state.selectedUnit;
+      attackTarget(unit, state.attackTargets[0]);
+    } else {
+      render();
+      showPrompt('Multiple targets \u2014 click an enemy to attack');
+    }
+    return;
+  }
+
+  // Click selected unit in attack phase = skip attack
+  if (state.selectedPhase === 'attack' && clickedPlayer === state.selectedUnit) {
+    state.selectedUnit.acted = true;
+    deselectUnit();
+    checkAllActed();
+    return;
+  }
+
+  // Click a different friendly unit = select it
+  if (clickedPlayer && !clickedPlayer.acted) {
+    selectUnit(clickedPlayer);
+    return;
+  }
+
+  // Click enemy to inspect
+  if (clickedEnemy && !state.selectedUnit) {
+    renderEnemyDetail(clickedEnemy);
+    return;
+  }
+
+  deselectUnit();
+}
+
+function renderEnemyDetail(enemy) {
+  const el = document.getElementById('unit-detail');
+  const color = enemy.color || '#ff5555';
+  el.innerHTML = `
+    <div class="unit-name" style="color:${color}">${enemy.icon} ${enemy.name}</div>
+    <div class="unit-type">Enemy</div>
+    <div class="stat-row"><span class="stat-label">HP</span><span class="stat-value">${enemy.hp} / ${enemy.maxHp}</span></div>
+    <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-value">${enemy.atk}</span></div>
+    <div class="stat-row"><span class="stat-label">Armor</span><span class="stat-value">${enemy.armor}</span></div>
+    <div class="stat-row"><span class="stat-label">Move</span><span class="stat-value">${enemy.move}</span></div>
+    <div class="stat-row"><span class="stat-label">Range</span><span class="stat-value">${enemy.range}</span></div>
+  `;
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showOverlay(title, subtitle, callback) {
+  const overlay = createOverlay();
+  overlay.innerHTML = `
+    <h2>${title}</h2>
+    <div class="sub">${subtitle}</div>
+    <button class="btn primary" id="overlay-btn">Begin</button>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('overlay-btn').addEventListener('click', () => {
+    overlay.remove();
+    callback();
+  });
+}
+
+function createOverlay(extraClass) {
+  const el = document.createElement('div');
+  el.className = 'overlay' + (extraClass ? ' ' + extraClass : '');
+  return el;
+}
+
+function showPrompt(msg) {
+  const existing = document.getElementById('game-prompt');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'game-prompt';
+  el.textContent = msg;
+  el.style.cssText = 'position:fixed;top:56px;left:50%;transform:translateX(-50%);padding:8px 20px;background:#ffd700;color:#0d1117;font-weight:700;font-size:14px;border-radius:6px;z-index:50;animation:fade-in 0.2s;pointer-events:none;';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ============================================================
+// EXPOSE TO HTML
+// ============================================================
+window._setPointLevel = function(pts) {
+  armyBuilderState.pointLevel = pts;
+  document.querySelectorAll('.point-level-btn').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.pts) === pts);
+  });
+};
+window._openArmyBuilder = showArmyBuilder;
+window._backToFactionSelect = function() {
+  showScreen('faction-select');
+};
+window._confirmArmy = confirmArmy;
+window._removeFromArmy = removeUnitFromArmy;
+window._skipUnit = skipUnit;
+window._endTurn = endTurn;
+
+// Initialize faction cards on load
+renderFactionCards();
+
+</script>
+</body>
+</html>
